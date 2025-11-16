@@ -4,21 +4,26 @@
 
 - Organized as a modular FastAPI application inside `backend/app`.
 - Configuration handled via Pydantic `Settings` sourced from `.env`.
-- Supabase client created in `app/supabase.py` for data persistence.
-- LLM provider abstraction in `app/services/llm.py` supports OpenAI now and Hugging Face later.
+- Database access via SQLAlchemy ORM with async support (`app/database.py`).
+- Database models defined in `app/models/` directory.
+- API routes organized in versioned structure (`app/api/v1/`).
 
 ## Frontend (React TBD)
 
 - Placeholder directory `frontend/` ready for either React + Vite or Next.js.
 - Once selected, scaffold within this directory and integrate with backend API.
 
-## Data Layer (Supabase)
+## Data Layer (SQLAlchemy + Supabase PostgreSQL)
 
-- Supabase keys loaded from environment variables.
-- Extend data access layers or repositories using the shared Supabase client.
+- Database connection configured via `DATABASE_URL` environment variable.
+- SQLAlchemy async engine and session management in `app/database.py`.
+- Database migrations handled by Alembic.
+- Models inherit from `Base` in `app/models/base.py`.
+- Database sessions injected via FastAPI dependency injection (`Depends(get_db)`).
 
-## LLM
+## Database Migrations
 
-- `LLMRequest` / `LLMResponse` schema defines API contract.
-- `get_llm_client` factory returns provider-specific client at runtime.
-- Add caching, rate-limiting, or prompt templates in the `services` layer as the project grows.
+- Alembic configured for database schema versioning.
+- Migration files in `alembic/versions/`.
+- Run `alembic revision --autogenerate -m "description"` to create migrations.
+- Run `alembic upgrade head` to apply migrations.
