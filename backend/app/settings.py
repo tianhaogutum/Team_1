@@ -1,7 +1,14 @@
 from functools import lru_cache
+from pathlib import Path
 
-from pydantic import Field, SecretStr, field_validator
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_DB_PATH = PROJECT_ROOT / "data" / "app.db"
+DEFAULT_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+DEFAULT_DB_URL = f"sqlite+aiosqlite:///{DEFAULT_DB_PATH.as_posix()}"
 
 
 class Settings(BaseSettings):
@@ -12,32 +19,18 @@ class Settings(BaseSettings):
     app_name: str = Field(default="Rec Lab API")
     version: str = Field(default="0.1.0")
 
-    # Database configuration (Supabase PostgreSQL)
-    # Format: postgresql+asyncpg://postgres:[password]@[host]:[port]/postgres
-    # Get this from Supabase: Settings -> Database -> Connection string (URI format)
-    database_url: SecretStr | None = Field(
-        default=None,
+    # Database configuration (SQLite by default)
+    database_url: str = Field(
+        default=DEFAULT_DB_URL,
         env="DATABASE_URL",
-        description="PostgreSQL connection string for Supabase. Format: postgresql+asyncpg://postgres:[password]@[host]:5432/postgres"
+        description="Database connection string. Defaults to sqlite+aiosqlite:///.../data/app.db",
     )
 
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
-        extra="ignore",  # Allow extra fields (like old SUPABASE_URL) without errors
+        extra="ignore",
     )
-
-    @field_validator("database_url")
-    @classmethod
-    def validate_database_url(cls, v: SecretStr | None) -> SecretStr:
-        if v is None:
-            raise ValueError(
-                "DATABASE_URL is required. "
-                "Please set it in your .env file. "
-                "Get it from Supabase: Settings -> Database -> Connection string (URI format). "
-                "Then change 'postgresql://' to 'postgresql+asyncpg://'"
-            )
-        return v
 
 
 @lru_cache(maxsize=1)

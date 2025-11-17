@@ -13,13 +13,15 @@
 - Placeholder directory `frontend/` ready for either React + Vite or Next.js.
 - Once selected, scaffold within this directory and integrate with backend API.
 
-## Data Layer (SQLAlchemy + Supabase PostgreSQL)
+## Data Layer (SQLAlchemy + SQLite)
 
-- Database connection configured via `DATABASE_URL` environment variable.
-- SQLAlchemy async engine and session management in `app/database.py`.
+- Local SQLite database stored in `backend/data/app.db` by default.
+- The path can be overridden via the `DATABASE_URL` environment variable (supports any async SQLAlchemy URL).
+- SQLAlchemy async engine and session management live in `app/database.py`.
 - Database migrations handled by Alembic.
 - Models inherit from `Base` in `app/models/base.py`.
 - Database sessions injected via FastAPI dependency injection (`Depends(get_db)`).
+- Outdooractive (or other) datasets should be ingested into SQLite via a one-off script or management command before being served by the API.
 
 ## Database Migrations
 

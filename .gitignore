@@ -16,12 +16,16 @@ build/
 
 # Environment files
 .env
+frontend/.env*
 
 # Node / frontend
 node_modules/
 dist/
 .next/
-frontend/.env*
+
+# SQLite databases
+*.db
+*.db-journal
 
 # IDE
 .idea/

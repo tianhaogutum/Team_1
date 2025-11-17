@@ -4,14 +4,14 @@ This repository provides a starter scaffold for the Rec Lab project with FastAPI
 
 ## Structure
 
-- `backend/`: FastAPI application with SQLAlchemy ORM connecting to Supabase PostgreSQL.
+- `backend/`: FastAPI application with SQLAlchemy ORM backed by a local SQLite database.
 - `frontend/`: Placeholder for future React or Next.js application.
 - `docs/`: Documentation and design notes.
 - `scripts/`: Utility scripts for local development and automation.
 
 ## Backend Setup
 
-The backend uses [FastAPI](https://fastapi.tiangolo.com/) with SQLAlchemy ORM for database operations, connecting to Supabase (PostgreSQL).
+The backend uses [FastAPI](https://fastapi.tiangolo.com/) with SQLAlchemy ORM for database operations, persisting data locally via SQLite (the Outdooractive data is stored in `backend/data/app.db` by default).
 
 ### Prerequisites
 
@@ -42,23 +42,15 @@ uvicorn app.main:app --reload --port 8000
 
 ### Environment Variables
 
-Create a `.env` file in `backend/` with the following keys:
+The API works out-of-the-box with SQLite — no configuration required. A database file is automatically created at `backend/data/app.db`.
+
+If you want to change the database location (or point to PostgreSQL/another engine), copy `backend/env.template` to `backend/.env` and update the connection string:
 
 ```env
-# Database Configuration (Supabase PostgreSQL)
-# Get this from your Supabase project: Settings -> Database -> Connection string
-# Format: postgresql+asyncpg://postgres:[PASSWORD]@[HOST]:[PORT]/postgres
-DATABASE_URL=postgresql+asyncpg://postgres:your_password@db.your_project.supabase.co:5432/postgres
+DATABASE_URL=sqlite+aiosqlite:///absolute/path/to/backend/data/app.db
 ```
 
-**How to get your Supabase DATABASE_URL:**
-
-1. Go to your Supabase project dashboard
-2. Navigate to Settings → Database
-3. Find the "Connection string" section
-4. Select "URI" format
-5. Replace `[YOUR-PASSWORD]` with your database password
-6. The format should be: `postgresql+asyncpg://postgres:[password]@[host]:5432/postgres`
+Any SQLAlchemy-compatible async URL (e.g., `postgresql+asyncpg://...`) is supported if the corresponding driver is installed.
 
 ### Database Migrations
 
@@ -81,7 +73,7 @@ The frontend stack is yet to be finalized. Use the `frontend/` directory to expe
 
 ## Database Integration
 
-The backend uses SQLAlchemy ORM with async support for database operations. Database models are defined in `app/models/`, and database sessions are managed through dependency injection in FastAPI routes.
+The backend uses SQLAlchemy ORM with async support for database operations. Database models are defined in `app/models/`, and database sessions are managed through dependency injection in FastAPI routes. Outdooractive data (or any other upstream source) should be ingested into the local SQLite database before serving via the API.
 
 **Example usage in a route:**
 
@@ -99,7 +91,7 @@ async def get_items(db: AsyncSession = Depends(get_db)):
 
 ## Development Workflow
 
-1. Configure environment variables in `backend/.env` (especially `DATABASE_URL`).
+1. (Optional) Configure environment variables in `backend/.env` if you need a custom `DATABASE_URL`.
 2. Create a virtual environment and install dependencies with pip.
 3. Run database migrations: `alembic upgrade head`
 4. Run `uvicorn` to start the API server.

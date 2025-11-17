@@ -2,7 +2,9 @@
 Database configuration and session management using SQLAlchemy.
 """
 from contextlib import asynccontextmanager
+from pathlib import Path
 
+from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
@@ -19,29 +21,44 @@ _engine = None
 _async_session_maker: async_sessionmaker[AsyncSession] | None = None
 
 
+def _ensure_sqlite_directory(url: str) -> None:
+    """
+    Ensure the parent directory for the SQLite database file exists.
+    """
+    parsed = make_url(url)
+    if parsed.database:
+        Path(parsed.database).parent.mkdir(parents=True, exist_ok=True)
+
+
 def get_database_url(settings: Settings) -> str:
     """
-    Construct the database URL from settings.
-    
-    For Supabase, the DATABASE_URL format is:
-    postgresql+asyncpg://postgres:[password]@[host]:[port]/postgres
-    
-    Automatically converts postgresql:// to postgresql+asyncpg:// if needed.
+    Construct the database URL from settings and normalize based on driver.
     """
-    url = settings.database_url.get_secret_value()
-    
-    # Ensure we're using asyncpg driver
+    url = settings.database_url.strip()
+
+    if url.startswith("sqlite+aiosqlite://"):
+        _ensure_sqlite_directory(url)
+        return url
+    if url.startswith("sqlite:///"):
+        normalized = url.replace("sqlite:///", "sqlite+aiosqlite:///", 1)
+        _ensure_sqlite_directory(normalized)
+        return normalized
+    if url.startswith("sqlite://"):
+        normalized = url.replace("sqlite://", "sqlite+aiosqlite://", 1)
+        _ensure_sqlite_directory(normalized)
+        return normalized
+
+    if url.startswith("postgresql+asyncpg://"):
+        return url
     if url.startswith("postgresql://"):
-        url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
-    elif url.startswith("postgres://"):
-        url = url.replace("postgres://", "postgresql+asyncpg://", 1)
-    elif not url.startswith("postgresql+asyncpg://"):
-        raise ValueError(
-            f"Invalid DATABASE_URL format. Expected 'postgresql+asyncpg://' or 'postgresql://', "
-            f"got: {url[:30]}..."
-        )
-    
-    return url
+        return url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    if url.startswith("postgres://"):
+        return url.replace("postgres://", "postgresql+asyncpg://", 1)
+
+    raise ValueError(
+        "Unsupported DATABASE_URL. Use sqlite+aiosqlite:///path/to/db.sqlite "
+        "or supply a postgresql+asyncpg:// URL with the appropriate driver installed."
+    )
 
 
 def init_db(settings: Settings | None = None) -> None:
@@ -60,15 +77,18 @@ def init_db(settings: Settings | None = None) -> None:
     
     database_url = get_database_url(settings)
     
+    engine_kwargs: dict[str, object] = {
+        "echo": False,
+        "future": True,
+    }
+
+    if database_url.startswith("sqlite+aiosqlite://"):
+        engine_kwargs["pool_pre_ping"] = False
+    else:
+        engine_kwargs.update({"pool_pre_ping": True, "pool_size": 10, "max_overflow": 20})
+
     # Create async engine
-    _engine = create_async_engine(
-        database_url,
-        echo=False,  # Set to True for SQL query logging
-        future=True,
-        pool_pre_ping=True,  # Verify connections before using
-        pool_size=10,
-        max_overflow=20,
-    )
+    _engine = create_async_engine(database_url, **engine_kwargs)
     
     # Create session factory
     _async_session_maker = async_sessionmaker(
