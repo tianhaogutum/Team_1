@@ -1,99 +1,145 @@
-# Rec Lab Scaffold
+# Rec Lab Project
 
-This repository provides a starter scaffold for the Rec Lab project with FastAPI backend and SQLAlchemy ORM.
+A full-stack application with FastAPI backend and Next.js frontend, featuring outdoor route recommendations with gamification and story generation.
 
-## Structure
+## Tech Stack
 
-- `backend/`: FastAPI application with SQLAlchemy ORM backed by a local SQLite database.
-- `frontend/`: Placeholder for future React or Next.js application.
-- `docs/`: Documentation and design notes.
-- `scripts/`: Utility scripts for local development and automation.
+**Backend:**
 
-## Backend Setup
+- FastAPI (Python 3.11+)
+- SQLAlchemy with async SQLite
+- Alembic for database migrations
 
-The backend uses [FastAPI](https://fastapi.tiangolo.com/) with SQLAlchemy ORM for database operations, persisting data locally via SQLite (the Outdooractive data is stored in `backend/data/app.db` by default).
+**Frontend:**
+
+- Next.js 16 with React 19
+- TypeScript
+- Tailwind CSS
+
+## Quick Start
 
 ### Prerequisites
 
 - Python 3.11+
+- Node.js 18+ (pnpm or npm)
 
-### Installation
+### 1. Backend Setup
 
 ```bash
 cd backend
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
+alembic upgrade head
 ```
 
-For development dependencies:
+### 2. Frontend Setup
 
 ```bash
-pip install -r requirements-dev.txt
+cd frontend
+pnpm install  # or npm install
+pnpm run build  # or npm run build
 ```
 
-### Running the API
+### 3. Run the Application
 
 ```bash
 cd backend
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate
 uvicorn app.main:app --reload --port 8000
 ```
 
-### Environment Variables
+Access the application at:
 
-The API works out-of-the-box with SQLite — no configuration required. A database file is automatically created at `backend/data/app.db`.
+- **Frontend**: http://localhost:8000
+- **API Docs**: http://localhost:8000/docs
+- **Health Check**: http://localhost:8000/healthz
 
-If you want to change the database location (or point to PostgreSQL/another engine), copy `backend/env.template` to `backend/.env` and update the connection string:
-
-```env
-DATABASE_URL=sqlite+aiosqlite:///absolute/path/to/backend/data/app.db
-```
-
-Any SQLAlchemy-compatible async URL (e.g., `postgresql+asyncpg://...`) is supported if the corresponding driver is installed.
-
-### Database Migrations
-
-This project uses [Alembic](https://alembic.sqlalchemy.org/) for database migrations.
+Or use the dev script:
 
 ```bash
-# Create a new migration
-alembic revision --autogenerate -m "Description of changes"
-
-# Apply migrations
-alembic upgrade head
-
-# Rollback one migration
-alembic downgrade -1
-```
-
-## Frontend Placeholder
-
-The frontend stack is yet to be finalized. Use the `frontend/` directory to experiment with React or Next.js. Add a framework-specific README or setup script once the choice is confirmed.
-
-## Database Integration
-
-The backend uses SQLAlchemy ORM with async support for database operations. Database models are defined in `app/models/`, and database sessions are managed through dependency injection in FastAPI routes. Outdooractive data (or any other upstream source) should be ingested into the local SQLite database before serving via the API.
-
-**Example usage in a route:**
-
-```python
-from fastapi import Depends
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.database import get_db
-
-@router.get("/items")
-async def get_items(db: AsyncSession = Depends(get_db)):
-    # Use db session here
-    result = await db.execute(text("SELECT * FROM items"))
-    return result.fetchall()
+./scripts/dev.sh
 ```
 
 ## Development Workflow
 
-1. (Optional) Configure environment variables in `backend/.env` if you need a custom `DATABASE_URL`.
-2. Create a virtual environment and install dependencies with pip.
-3. Run database migrations: `alembic upgrade head`
-4. Run `uvicorn` to start the API server.
-5. Add frontend implementation under `frontend/`.
-6. Create new database models in `app/models/` and generate migrations as needed.
+1. **Set up environment** (first time only)
+
+   ```bash
+   # Backend
+   cd backend && python -m venv venv
+   source venv/bin/activate
+   pip install -r requirements.txt -r requirements-dev.txt
+   alembic upgrade head
+
+   # Frontend
+   cd ../frontend && pnpm install
+   ```
+
+2. **Develop backend**
+
+   - Edit code in `backend/app/`
+   - Create migrations: `alembic revision --autogenerate -m "description"`
+   - Apply migrations: `alembic upgrade head`
+
+3. **Develop frontend**
+
+   ```bash
+   cd frontend
+   pnpm run dev  # Runs on http://localhost:3000
+   ```
+
+4. **Build and serve together**
+
+   ```bash
+   # Build frontend
+   cd frontend && pnpm run build
+
+   # Run backend (serves both API and frontend)
+   cd ../backend && source venv/bin/activate
+   uvicorn app.main:app --reload --port 8000
+   ```
+
+## Project Structure
+
+```
+.
+├── backend/
+│   ├── app/
+│   │   ├── api/v1/     # API endpoints
+│   │   ├── models/     # Database models
+│   │   ├── services/   # Business logic
+│   │   ├── database.py # DB connection
+│   │   └── main.py     # FastAPI app
+│   ├── alembic/        # Database migrations
+│   ├── data/           # SQLite database
+│   ├── scripts/        # Utility scripts
+│   └── requirements.txt
+├── frontend/
+│   ├── app/            # Next.js app directory
+│   ├── components/     # React components
+│   └── out/            # Build output (generated)
+└── scripts/
+    └── dev.sh          # Development server script
+```
+
+## Database
+
+- **Default location**: `backend/data/app.db`
+- **Migrations**: Managed with Alembic
+  ```bash
+  alembic revision --autogenerate -m "description"
+  alembic upgrade head
+  alembic downgrade -1
+  ```
+- **Environment**: Copy `backend/env.example` to `backend/.env` to customize `DATABASE_URL`
+
+## Scripts
+
+- `backend/scripts/seed_db.py` - Seed database with demo data
+- `backend/scripts/test_models.py` - Test database models
+- `scripts/dev.sh` - Start development server
+
+## Environment Variables
+
+See `backend/env.example` for available configuration options. Create `backend/.env` to override defaults.
