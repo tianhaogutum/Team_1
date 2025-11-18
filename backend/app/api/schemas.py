@@ -68,9 +68,9 @@ class RouteDetailResponse(RouteResponse):
 class ProfileCreate(BaseModel):
     """Create profile request schema (from questionnaire)."""
     
-    fitness_level: str  # beginner/intermediate/advanced/expert
-    preferred_types: list[str]  # [hiking, city-walk, trail-running]
-    narrative_style: str  # adventure/mystery/nature/history
+    fitness: str  # "beginner" | "intermediate" | "advanced"
+    type: list[str]  # ["history-culture", "natural-scenery", "family-fun"]
+    narrative: str  # "adventure" | "mystery" | "playful"
 
 
 class ProfileUpdate(BaseModel):
@@ -94,6 +94,14 @@ class ProfileResponse(BaseModel):
     unlocked_routes_json: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ProfileCreateResponse(BaseModel):
+    """Profile creation response schema (after questionnaire submission)."""
+    
+    id: int
+    welcome_summary: str
+    user_vector: dict  # For debugging, shows translated user preferences
 
 
 class WelcomeSummaryRequest(BaseModel):

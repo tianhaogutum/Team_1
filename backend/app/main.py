@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api.v1 import sample
+from .api.v1 import profiles, sample
 from .database import close_db, init_db
 from .settings import get_settings
 
@@ -51,6 +51,7 @@ def create_app() -> FastAPI:
         return {"status": "ok"}
 
     app.include_router(sample.router, prefix="/api")
+    app.include_router(profiles.router, prefix="/api")
 
     return app
 

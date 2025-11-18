@@ -107,8 +107,7 @@ async def close_db() -> None:
         await _engine.dispose()
 
 
-@asynccontextmanager
-async def get_db() -> AsyncSession:
+async def get_db():
     """
     Dependency for getting a database session.
     
