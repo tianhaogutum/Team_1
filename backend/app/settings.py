@@ -26,6 +26,15 @@ class Settings(BaseSettings):
         description="Database connection string. Defaults to sqlite+aiosqlite:///.../data/app.db",
     )
 
+    outdooractive_api_key: str = Field(
+        env="OUTDOORACTIVE_API_KEY",
+        description="API key for Outdooractive routes API.",
+    )
+    outdooractive_base_url: str = Field(
+        env="OUTDOORACTIVE_BASE_URL",
+        description="Base URL for Outdooractive API.",
+    )
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
