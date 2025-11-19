@@ -54,7 +54,8 @@ async def generate_story_for_route(
     story_points = await _generate_story_points(
         skeleton=skeleton,
         poi_list=poi_list,
-        num_points=len(breakpoints)
+        num_points=len(breakpoints),
+        narrative_style=narrative_style  # Pass narrative style through
     )
     
     # 4. Assemble and return
@@ -118,8 +119,6 @@ async def _generate_skeleton(route_context: dict, narrative_style: str) -> dict:
         narrative_style,
         NARRATIVE_STYLE_PROMPTS["adventure"]  # Default to adventure
     )
-    # Extract a concise descriptor for the prompt (first sentence)
-    style_desc = narrative_hint.split('.')[0] if '.' in narrative_hint else narrative_hint[:50]
     
     # Extract tags as string
     tags_str = ', '.join(str(t.get('text', t)) if isinstance(t, dict) else str(t) 
@@ -128,7 +127,8 @@ async def _generate_skeleton(route_context: dict, narrative_style: str) -> dict:
     prompt = f"""<|begin_of_text|><|start_header_id|>system<|end_header_id|>
 
 You are a master storyteller for outdoor adventures. Create a story framework for this route.
-Style: {style_desc}
+
+The narrative style must follow this description: "{narrative_hint}"
 
 You must respond with ONLY valid JSON in this exact format:
 {{
@@ -146,19 +146,17 @@ Distance: {route_context['distance_km']} km
 Difficulty: {route_context['difficulty']}/6
 Tags: {tags_str}
 
-Generate the story framework in JSON format.<|eot_id|><|start_header_id|>assistant<|end_header_id|>
-
-{{"""
+Generate the story framework in JSON format.<|eot_id|><|start_header_id|>assistant<|end_header_id|>"""
 
     try:
         response = await call_ollama(
             prompt=prompt,
             max_tokens=500,
-            temperature=0.85
+            temperature=0.5
         )
         
-        # Add back the opening brace since prompt ends with it
-        full_response = "{" + response
+        # Ollama returns complete JSON, no need to add opening brace
+        full_response = response
         
         # Extract JSON from response (handle potential markdown code blocks)
         json_str = full_response
@@ -196,7 +194,8 @@ Generate the story framework in JSON format.<|eot_id|><|start_header_id|>assista
 async def _generate_story_points(
     skeleton: dict,
     poi_list: str,
-    num_points: int
+    num_points: int,
+    narrative_style: str = "adventure"
 ) -> list[dict]:
     """
     Batch generate story content for ALL breakpoints.
@@ -205,13 +204,23 @@ async def _generate_story_points(
         skeleton: Generated story skeleton
         poi_list: Formatted POI list
         num_points: Number of breakpoints to generate
+        narrative_style: Narrative style to maintain consistency
     
     Returns:
         list of dicts with index, main_quest, side_plot
     """
+    # Get detailed narrative style instructions
+    narrative_hint = NARRATIVE_STYLE_PROMPTS.get(
+        narrative_style,
+        NARRATIVE_STYLE_PROMPTS["adventure"]
+    )
+    
     prompt = f"""<|begin_of_text|><|start_header_id|>system<|end_header_id|>
 
-You are a game master creating checkpoint narratives for an adventure story.
+You are a game master creating checkpoint narratives for a story.
+
+The narrative style must follow this description: "{narrative_hint}"
+
 For EACH checkpoint, write TWO distinct snippets:
 
 1. MAIN_QUEST (40-60 words): Advance the main plot. This continues the story from prologue through each point to epilogue. Must be narrative progression.
@@ -242,19 +251,17 @@ Story Framework:
 Generate narratives for these {num_points} checkpoints in order:
 {poi_list}
 
-The main_quest must flow smoothly: Prologue → Point 0 → Point 1 → ... → Point {num_points-1} → Epilogue<|eot_id|><|start_header_id|>assistant<|end_header_id|>
-
-["""
+The main_quest must flow smoothly: Prologue → Point 0 → Point 1 → ... → Point {num_points-1} → Epilogue<|eot_id|><|start_header_id|>assistant<|end_header_id|>"""
 
     try:
         response = await call_ollama(
             prompt=prompt,
             max_tokens=num_points * 180,  # ~180 tokens per point for JSON format
-            temperature=0.8
+            temperature=0.6
         )
         
-        # Add back the opening bracket since prompt ends with it
-        full_response = "[" + response
+        # Ollama returns complete JSON array, no need to add opening bracket
+        full_response = response
         
         # Extract JSON from response (handle potential markdown code blocks)
         json_str = full_response

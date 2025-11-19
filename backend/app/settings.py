@@ -39,9 +39,9 @@ class Settings(BaseSettings):
         description="Ollama model name (llama3.1:8b recommended for best results)",
     )
     ollama_timeout: int = Field(
-        default=30,
+        default=120,
         env="OLLAMA_TIMEOUT",
-        description="Timeout in seconds for Ollama API calls",
+        description="Timeout in seconds for Ollama API calls (increased for batch story generation)",
     )
 
     model_config = SettingsConfigDict(
