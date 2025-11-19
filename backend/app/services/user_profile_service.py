@@ -35,12 +35,8 @@ ADVENTURE_TYPE_TO_TAGS = {
     "family-fun": ["suitableforfamilies", "playground", "dining", "loopTour"],
 }
 
-# Narrative style → LLM prompt style descriptors
-NARRATIVE_STYLE_PROMPTS = {
-    "adventure": "epic adventure with heroic challenges",
-    "mystery": "mysterious discovery with hidden secrets",
-    "playful": "lighthearted and fun exploration",
-}
+# Import narrative style prompts from genai_service for consistency
+from app.services.genai_service import NARRATIVE_STYLE_PROMPTS
 
 
 def translate_questionnaire_to_vector(questionnaire: ProfileCreate) -> dict[str, Any]:

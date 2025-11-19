@@ -21,6 +21,34 @@ from app.api.schemas import ProfileCreate
 from app.settings import get_settings
 
 
+# Narrative style → LLM prompt style descriptors
+# These detailed instructions ensure the LLM produces consistent, style-appropriate output
+# Used across all GenAI services (welcome summaries, story generation, etc.)
+NARRATIVE_STYLE_PROMPTS = {
+    "adventure": (
+        "Write in an epic, cinematic tone. Emphasize a sense of grand journey, "
+        "meaningful challenges, and heroic progression. Use language that makes the "
+        "user feel like the protagonist of a larger saga, with each route as a new "
+        "chapter in their legend. Keep the tone inspiring, confident, and slightly "
+        "dramatic, but still clear and easy to read."
+    ),
+    "mystery": (
+        "Write in a mysterious, slightly suspenseful tone. Emphasize hidden corners, "
+        "quiet details, and secrets waiting to be uncovered. Use language that suggests "
+        "clues, layers, and discoveries rather than stating everything directly. "
+        "The tone should be intriguing and immersive, inviting the user to look closer "
+        "and follow the trail of hints."
+    ),
+    "playful": (
+        "Write in a light-hearted, playful tone. Emphasize fun, curiosity, and small "
+        "joyful moments rather than serious challenges. Use friendly, energetic language "
+        "and a touch of humor, as if you are a cheerful guide talking to a friend. "
+        "The tone should feel casual, encouraging, and welcoming, suitable for users "
+        "who want relaxed adventures."
+    ),
+}
+
+
 async def call_ollama(
     prompt: str,
     max_tokens: int = 300,
@@ -101,6 +129,12 @@ async def generate_welcome_summary(questionnaire: ProfileCreate) -> str:
     # Build adventure types list for the prompt
     adventure_types_str = ", ".join(questionnaire.type) if questionnaire.type else "exploration"
     
+    # Get detailed narrative style instructions
+    narrative_hint = NARRATIVE_STYLE_PROMPTS.get(
+        questionnaire.narrative,
+        "Use a neutral, friendly narrative tone."
+    )
+    
     # Construct prompt using Llama3.1 chat template with few-shot examples
     prompt = f"""<|begin_of_text|><|start_header_id|>system<|end_header_id|>
 
@@ -112,6 +146,8 @@ Guidelines:
 - Focus on: fitness level, adventure preferences, narrative style
 - Do NOT: invent character names, describe physical appearance, use generic phrases
 - Start with a creative explorer title that matches their profile
+
+The narrative style should follow this description: "{narrative_hint}"
 
 Output only the welcome message, no additional text.<|eot_id|><|start_header_id|>user<|end_header_id|>
 
@@ -146,8 +182,8 @@ Profile:
     try:
         response = await call_ollama(
             prompt=prompt,
-            max_tokens=150,
-            temperature=0.7  # Balanced creativity and consistency
+            max_tokens=170,
+            temperature=0.6  # Balanced creativity and consistency
         )
         
         # Clean up response

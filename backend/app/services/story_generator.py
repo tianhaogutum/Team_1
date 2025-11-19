@@ -11,7 +11,7 @@ import json
 from typing import Any
 
 from app.models.entities import Route, Breakpoint
-from app.services.genai_service import call_ollama
+from app.services.genai_service import call_ollama, NARRATIVE_STYLE_PROMPTS
 
 
 async def generate_story_for_route(
@@ -113,13 +113,13 @@ async def _generate_skeleton(route_context: dict, narrative_style: str) -> dict:
     Returns:
         dict with title, outline, prologue, epilogue
     """
-    # Map narrative style to descriptors
-    style_hints = {
-        "adventure": "epic quest with heroic challenges",
-        "mystery": "enigmatic discovery with hidden secrets",
-        "playful": "lighthearted exploration with joyful moments"
-    }
-    style_desc = style_hints.get(narrative_style, style_hints["adventure"])
+    # Get detailed narrative style instructions from centralized prompts
+    narrative_hint = NARRATIVE_STYLE_PROMPTS.get(
+        narrative_style,
+        NARRATIVE_STYLE_PROMPTS["adventure"]  # Default to adventure
+    )
+    # Extract a concise descriptor for the prompt (first sentence)
+    style_desc = narrative_hint.split('.')[0] if '.' in narrative_hint else narrative_hint[:50]
     
     # Extract tags as string
     tags_str = ', '.join(str(t.get('text', t)) if isinstance(t, dict) else str(t) 
