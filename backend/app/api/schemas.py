@@ -200,7 +200,8 @@ class FeedbackResponse(BaseModel):
 class RecommendationRequest(BaseModel):
     """Recommendation request schema (query parameters)."""
     
-    activity_type: Optional[str] = None  # hiking/city-walk/trail-running
+    profile_id: Optional[int] = None  # User profile ID for personalized recommendations
+    category: Optional[str] = None  # Activity category: running/hiking/cycling or None for all
 
 
 class RecommendationResponse(BaseModel):
@@ -208,6 +209,7 @@ class RecommendationResponse(BaseModel):
     
     routes: list[RouteResponse]
     total: int
+    is_personalized: bool = False  # True if based on user profile, False if random
 
 
 # ============================================================================

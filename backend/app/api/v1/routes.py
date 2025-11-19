@@ -13,11 +13,78 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models.entities import Route, Breakpoint
+from app.models.entities import Route, Breakpoint, DemoProfile
 from app.services.story_generator import generate_story_for_route
-from app.api.schemas import StoryGenerateRequest, StoryGenerateResponse
+from app.services.recommendation_service import get_recommended_routes
+from app.api.schemas import (
+    StoryGenerateRequest,
+    StoryGenerateResponse,
+    RecommendationResponse,
+    RouteResponse,
+)
 
 router = APIRouter(prefix="/routes", tags=["routes"])
+
+
+@router.get("/recommendations", response_model=RecommendationResponse)
+async def get_route_recommendations(
+    profile_id: int | None = None,
+    category: str | None = None,
+    limit: int = 20,
+    db: Annotated[AsyncSession, Depends(get_db)] = ...,
+):
+    """
+    Get route recommendations using Content-Based Filtering (CBF).
+    
+    This endpoint implements US-02 (personalized recommendations) and US-01 (random recommendations).
+    
+    Query Parameters:
+    - profile_id: Optional user profile ID for personalized recommendations
+    - category: Optional activity category filter (running/hiking/cycling)
+    - limit: Maximum number of routes to return (default: 20)
+    
+    Behavior:
+    - If profile_id provided: Returns routes ranked by CBF similarity score
+    - If no profile_id: Returns random routes
+    - If category provided: Filters results by mapped category_name values
+    
+    Returns:
+        RecommendationResponse with routes list and metadata
+    """
+    # Validate profile_id if provided and fetch profile once
+    profile = None
+    if profile_id is not None:
+        profile = await db.get(DemoProfile, profile_id)
+        if not profile:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Profile with id {profile_id} not found"
+            )
+    
+    # Get recommended routes
+    routes = await get_recommended_routes(
+        db=db,
+        profile_id=profile_id,
+        category=category,
+        limit=limit
+    )
+    
+    # Convert to response models
+    route_responses = []
+    for route in routes:
+        route_dict = RouteResponse.model_validate(route).model_dump()
+        # Add is_locked field based on user XP (if profile exists)
+        if profile:
+            route_dict["is_locked"] = profile.total_xp < route.xp_required
+        else:
+            route_dict["is_locked"] = False
+        route_responses.append(RouteResponse(**route_dict))
+    
+    return RecommendationResponse(
+        routes=route_responses,
+        total=len(route_responses),
+        is_personalized=(profile_id is not None)
+    )
 
 
 @router.post("/{route_id}/generate-story", response_model=StoryGenerateResponse)
