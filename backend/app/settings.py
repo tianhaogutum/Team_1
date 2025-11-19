@@ -33,9 +33,9 @@ class Settings(BaseSettings):
         description="Ollama API endpoint URL for TinyLlama",
     )
     tinyllama_model: str = Field(
-        default="tinyllama",
+        default="llama3.1:8b",
         env="TINYLLAMA_MODEL",
-        description="Ollama model name to use",
+        description="Ollama model name to use (llama3.1:8b recommended)",
     )
     tinyllama_timeout: int = Field(
         default=30,

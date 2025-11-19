@@ -9,9 +9,60 @@ This service encapsulates all LLM interactions including:
 """
 import httpx
 from typing import Optional
+from fastapi import HTTPException
 
 from app.api.schemas import ProfileCreate
 from app.settings import get_settings
+
+
+async def call_ollama(
+    prompt: str,
+    max_tokens: int = 300,
+    temperature: float = 0.8
+) -> str:
+    """
+    Unified wrapper for Ollama API calls with error handling.
+    
+    Args:
+        prompt: The prompt text to send to the model
+        max_tokens: Maximum number of tokens to generate
+        temperature: Sampling temperature for generation
+    
+    Returns:
+        str: Generated text response from the model
+        
+    Raises:
+        HTTPException: If the API call fails or returns empty response
+    """
+    settings = get_settings()
+    
+    try:
+        async with httpx.AsyncClient(timeout=settings.tinyllama_timeout) as client:
+            response = await client.post(
+                settings.tinyllama_api_url,
+                json={
+                    "model": settings.tinyllama_model,
+                    "prompt": prompt,
+                    "stream": False,
+                    "options": {
+                        "temperature": temperature,
+                        "num_predict": max_tokens,
+                    },
+                },
+            )
+            response.raise_for_status()
+            result = response.json()
+            
+            if "response" in result and result.get("done", False):
+                return result["response"].strip()
+            
+            raise ValueError("Empty response from Ollama")
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Story generation failed: {str(e)}"
+        )
 
 
 async def generate_welcome_summary(questionnaire: ProfileCreate) -> str:

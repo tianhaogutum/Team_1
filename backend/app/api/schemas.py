@@ -294,6 +294,32 @@ class StoryGenerateResponse(BaseModel):
     epilogue_body: Optional[str] = None
 
 
+# ============================================================================
+# Story Generation Schemas
+# ============================================================================
+
+class StoryGenerateRequest(BaseModel):
+    """Story generation request schema."""
+    narrative_style: str = "adventure"  # adventure, mystery, playful
+    force_regenerate: bool = False  # Force regenerate even if story exists
+
+
+class StoryBreakpointContent(BaseModel):
+    """Story content for a single breakpoint."""
+    index: int
+    main_quest: str
+    side_plot: str
+
+
+class StoryGenerateResponse(BaseModel):
+    """Story generation response schema."""
+    title: str
+    outline: str
+    prologue: str
+    epilogue: str
+    breakpoints: list[StoryBreakpointContent]
+
+
 # Update forward references
 BreakpointResponse.model_rebuild()
 
