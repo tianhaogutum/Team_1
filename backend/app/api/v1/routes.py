@@ -31,7 +31,7 @@ async def generate_route_story(
     
     This endpoint implements the Two-Step Global Generation approach:
     1. If story exists and force_regenerate=False, return existing (0 delay)
-    2. Otherwise, generate new story using TinyLlama (10-15s)
+    2. Otherwise, generate new story using Llama3.1:8b via Ollama (10-15s)
     3. Save to database for future use
     
     Args:

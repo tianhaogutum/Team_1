@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api.v1 import profiles, routes, sample
+from .api.v1 import profiles, routes
 from .database import close_db, init_db
 from .settings import get_settings
 
@@ -50,7 +50,6 @@ def create_app() -> FastAPI:
     async def healthcheck() -> dict[str, str]:
         return {"status": "ok"}
 
-    app.include_router(sample.router, prefix="/api")
     app.include_router(profiles.router, prefix="/api")
     app.include_router(routes.router, prefix="/api")
 

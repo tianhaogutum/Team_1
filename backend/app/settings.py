@@ -26,21 +26,22 @@ class Settings(BaseSettings):
         description="Database connection string. Defaults to sqlite+aiosqlite:///.../data/app.db",
     )
 
-    # TinyLlama configuration (for GenAI story generation via Ollama)
-    tinyllama_api_url: str = Field(
+    # Ollama LLM configuration (for GenAI story generation)
+    # Using Llama3.1:8b for high-quality, structured output
+    ollama_api_url: str = Field(
         default="http://localhost:11434/api/generate",
-        env="TINYLLAMA_API_URL",
-        description="Ollama API endpoint URL for TinyLlama",
+        env="OLLAMA_API_URL",
+        description="Ollama API endpoint URL",
     )
-    tinyllama_model: str = Field(
+    ollama_model: str = Field(
         default="llama3.1:8b",
-        env="TINYLLAMA_MODEL",
-        description="Ollama model name to use (llama3.1:8b recommended)",
+        env="OLLAMA_MODEL",
+        description="Ollama model name (llama3.1:8b recommended for best results)",
     )
-    tinyllama_timeout: int = Field(
+    ollama_timeout: int = Field(
         default=30,
-        env="TINYLLAMA_TIMEOUT",
-        description="Timeout in seconds for TinyLlama API calls",
+        env="OLLAMA_TIMEOUT",
+        description="Timeout in seconds for Ollama API calls",
     )
 
     model_config = SettingsConfigDict(

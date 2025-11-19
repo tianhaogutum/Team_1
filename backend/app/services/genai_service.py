@@ -43,11 +43,11 @@ async def call_ollama(
     settings = get_settings()
     
     try:
-        async with httpx.AsyncClient(timeout=settings.tinyllama_timeout) as client:
+        async with httpx.AsyncClient(timeout=settings.ollama_timeout) as client:
             response = await client.post(
-                settings.tinyllama_api_url,
+                settings.ollama_api_url,
                 json={
-                    "model": settings.tinyllama_model,
+                    "model": settings.ollama_model,
                     "prompt": prompt,
                     "stream": False,
                     "options": {

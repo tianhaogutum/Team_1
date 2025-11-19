@@ -101,7 +101,7 @@ def generate_fallback_welcome(questionnaire: ProfileCreate) -> str:
     """
     Generate a rule-based welcome message when GenAI is unavailable.
     
-    This serves as a fallback when TinyLlama or other LLM services fail.
+    This serves as a fallback when Ollama or other LLM services are unavailable.
     
     Parameters
     ----------
