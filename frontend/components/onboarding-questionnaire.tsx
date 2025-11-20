@@ -27,6 +27,7 @@ export function OnboardingQuestionnaire({
   const [isCreatingProfile, setIsCreatingProfile] = useState(false);
   const [backendProfileId, setBackendProfileId] = useState<number | null>(null);
   const [welcomeSummary, setWelcomeSummary] = useState<string | null>(null);
+  const [isLoadingSummary, setIsLoadingSummary] = useState(false);
 
   const progress =
     ((currentQuestion + 1) / questionnaireQuestions.length) * 100;
@@ -61,7 +62,7 @@ export function OnboardingQuestionnaire({
     }
   };
 
-  const generateExplorerType = () => {
+  const generateExplorerType = async () => {
     // Simple logic to generate explorer type based on answers
     const fitness = answers.fitness;
     const narrative = answers.narrative;
@@ -79,13 +80,10 @@ export function OnboardingQuestionnaire({
 
     setExplorerType(type);
     setShowSummary(true);
-  };
 
-  const handleComplete = async () => {
-    setIsCreatingProfile(true);
-
+    // Fetch welcome summary from backend immediately
+    setIsLoadingSummary(true);
     try {
-      // Call backend API to create profile
       const response = await apiClient.post<ApiProfileCreateResponse>(
         "api/profiles",
         {
@@ -95,14 +93,39 @@ export function OnboardingQuestionnaire({
         }
       );
 
-      // Save backend profile ID and welcome summary
       setBackendProfileId(response.id);
       setWelcomeSummary(response.welcome_summary);
+    } catch (error) {
+      console.error("Failed to fetch welcome summary:", error);
+      // welcomeSummary remains null, fallback will be shown
+    } finally {
+      setIsLoadingSummary(false);
+    }
+  };
+
+  const handleComplete = async () => {
+    setIsCreatingProfile(true);
+
+    try {
+      // If profile wasn't created during generateExplorerType, create it now
+      if (!backendProfileId) {
+        const response = await apiClient.post<ApiProfileCreateResponse>(
+          "api/profiles",
+          {
+            fitness: answers.fitness,
+            type: answers.type || [],
+            narrative: answers.narrative,
+          }
+        );
+
+        setBackendProfileId(response.id);
+        setWelcomeSummary(response.welcome_summary);
+      }
 
       // Create frontend profile with backend ID
       const profile: UserProfile = {
         ...defaultUserProfile,
-        id: String(response.id), // Store backend profile ID
+        id: backendProfileId ? String(backendProfileId) : defaultUserProfile.id,
         explorerType,
         fitnessLevel: answers.fitness,
         preferredTypes: answers.type || [],
@@ -111,7 +134,7 @@ export function OnboardingQuestionnaire({
 
       onComplete(profile);
     } catch (error) {
-      console.error("Failed to create profile on backend:", error);
+      console.error("Failed to complete profile creation:", error);
 
       // Fallback: create local-only profile
       const profile: UserProfile = {
@@ -165,8 +188,19 @@ export function OnboardingQuestionnaire({
 
             <div className="bg-muted p-6 pixel-border-sm">
               <p className="text-[10px] md:text-xs leading-relaxed text-foreground">
-                YOUR ADVENTURE PROFILE HAS BEEN CREATED. ROUTES HAVE BEEN
-                PERSONALIZED TO MATCH YOUR EXPLORER SPIRIT.
+                {isLoadingSummary ? (
+                  // Loading state
+                  <span className="flex items-center justify-center gap-2">
+                    <Sparkles className="w-4 h-4 animate-pulse" />
+                    <span>GENERATING YOUR PERSONALIZED WELCOME...</span>
+                  </span>
+                ) : welcomeSummary ? (
+                  // Display AI-generated welcome summary from backend
+                  welcomeSummary
+                ) : (
+                  // Fallback message if backend generation failed
+                  "YOUR ADVENTURE PROFILE HAS BEEN CREATED. ROUTES HAVE BEEN PERSONALIZED TO MATCH YOUR EXPLORER SPIRIT."
+                )}
               </p>
             </div>
 
