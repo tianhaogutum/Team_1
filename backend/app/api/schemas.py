@@ -41,6 +41,7 @@ class RouteResponse(BaseModel):
     short_description: Optional[str] = None
     location: Optional[str] = None
     elevation: Optional[int] = None
+    tags_json: Optional[str] = None
     xp_required: int
     base_xp_reward: int
     story_prologue_title: Optional[str] = None

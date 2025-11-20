@@ -70,6 +70,19 @@ function transformBreakpoint(apiBreakpoint: ApiBreakpoint): Breakpoint {
  * mapping the base_xp_reward to xpReward and handling all other field transformations.
  */
 export function transformApiRoute(apiRoute: ApiRoute): Route {
+  // Parse tags_json and take maximum 3 tags
+  let tags: string[] = [];
+  if (apiRoute.tags_json) {
+    try {
+      const parsedTags = JSON.parse(apiRoute.tags_json);
+      if (Array.isArray(parsedTags)) {
+        tags = parsedTags.slice(0, 3); // Take only first 3 tags
+      }
+    } catch (e) {
+      console.warn(`Failed to parse tags_json for route ${apiRoute.id}:`, e);
+    }
+  }
+
   return {
     id: String(apiRoute.id),
     name: apiRoute.title,
@@ -86,7 +99,7 @@ export function transformApiRoute(apiRoute: ApiRoute): Route {
     xpReward: apiRoute.base_xp_reward, // ⭐ Base XP reward from backend
     rating: 4.5, // Could be enhanced with actual rating data from backend
     completions: 100, // Could be enhanced with actual completion count from backend
-    tags: [], // Could be enhanced by parsing tags_json from backend
+    tags: tags, // Parsed from tags_json, max 3 tags
     isLocked: apiRoute.is_locked,
     xpRequired: apiRoute.xp_required,
     breakpoints: apiRoute.breakpoints.map(transformBreakpoint),

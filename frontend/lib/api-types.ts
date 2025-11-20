@@ -33,6 +33,7 @@ export interface ApiRoute {
   short_description: string | null;
   location: string | null;
   elevation: number | null;
+  tags_json: string | null; // JSON array of tags
   xp_required: number; // XP needed to unlock this route
   base_xp_reward: number; // XP earned from completing this route (Base XP)
   story_prologue_title: string | null;

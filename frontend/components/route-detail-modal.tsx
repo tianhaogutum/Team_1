@@ -162,14 +162,16 @@ export function RouteDetailModal({
             </div>
           </div>
 
-          {/* Tags */}
-          <div className="flex flex-wrap gap-2">
-            {route.tags.map((tag) => (
-              <Badge key={tag} variant="outline" className="text-xs">
-                #{tag}
-              </Badge>
-            ))}
-          </div>
+          {/* Tags - Maximum 3 tags */}
+          {route.tags.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {route.tags.map((tag) => (
+                <Badge key={tag} variant="outline" className="text-xs">
+                  #{tag}
+                </Badge>
+              ))}
+            </div>
+          )}
 
           <div className="pt-4 border-t-2 border-border">
             {!hasCompletedQuestionnaire ? (
