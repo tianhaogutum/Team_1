@@ -1,4 +1,9 @@
 // Mock data for TrailSaga prototype
+//
+// NOTE: When connecting to the real backend API, use the types from api-types.ts
+// and transform the data accordingly. Specifically:
+// - xpReward should come from ApiRoute.base_xp_reward (the Base XP earned from completing the route)
+// - xpRequired corresponds to ApiRoute.xp_required (XP needed to unlock the route)
 
 export interface Route {
   id: string;
@@ -11,12 +16,12 @@ export interface Route {
   location: string;
   description: string;
   imageUrl: string;
-  xpReward: number;
+  xpReward: number; // Base XP earned from completing this route (maps to ApiRoute.base_xp_reward)
   rating: number;
   completions: number;
   tags: string[];
   isLocked?: boolean;
-  xpRequired?: number;
+  xpRequired?: number; // XP needed to unlock this route (maps to ApiRoute.xp_required)
   breakpoints: Breakpoint[];
   prologue?: string;
   epilogue?: string;

@@ -1,18 +1,16 @@
 /**
  * API Client for TrailSaga backend
  * Provides a centralized way to make API requests with error handling
+ *
+ * See api-types.ts for TypeScript type definitions that match the backend schemas
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export class ApiError extends Error {
-  constructor(
-    message: string,
-    public status: number,
-    public data?: unknown
-  ) {
+  constructor(message: string, public status: number, public data?: unknown) {
     super(message);
-    this.name = 'ApiError';
+    this.name = "ApiError";
   }
 }
 
@@ -27,8 +25,8 @@ class ApiClient {
    * Get profile ID from localStorage
    */
   private getProfileId(): string | null {
-    if (typeof window === 'undefined') return null;
-    const profile = localStorage.getItem('trailsaga-profile');
+    if (typeof window === "undefined") return null;
+    const profile = localStorage.getItem("trailsaga-profile");
     if (profile) {
       try {
         const parsed = JSON.parse(profile);
@@ -45,7 +43,9 @@ class ApiClient {
    */
   private buildUrl(endpoint: string): string {
     // Remove leading slash if present to avoid double slashes
-    const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+    const cleanEndpoint = endpoint.startsWith("/")
+      ? endpoint.slice(1)
+      : endpoint;
     return `${this.baseURL}/${cleanEndpoint}`;
   }
 
@@ -57,19 +57,19 @@ class ApiClient {
     options: RequestInit = {}
   ): Promise<T> {
     const url = this.buildUrl(endpoint);
-    
+
     // Get profile ID for authenticated requests
     const profileId = this.getProfileId();
-    
+
     // Set default headers
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-      ...options.headers,
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...(options.headers as Record<string, string>),
     };
 
     // Add profile ID to headers if available (for demo purposes)
     if (profileId) {
-      headers['X-Profile-Id'] = profileId;
+      headers["X-Profile-Id"] = profileId;
     }
 
     try {
@@ -79,8 +79,8 @@ class ApiClient {
       });
 
       // Handle non-JSON responses
-      const contentType = response.headers.get('content-type');
-      if (!contentType?.includes('application/json')) {
+      const contentType = response.headers.get("content-type");
+      if (!contentType?.includes("application/json")) {
         if (!response.ok) {
           throw new ApiError(
             `HTTP ${response.status}: ${response.statusText}`,
@@ -94,7 +94,9 @@ class ApiClient {
 
       if (!response.ok) {
         throw new ApiError(
-          data.detail || data.message || `HTTP ${response.status}: ${response.statusText}`,
+          data.detail ||
+            data.message ||
+            `HTTP ${response.status}: ${response.statusText}`,
           response.status,
           data
         );
@@ -105,17 +107,17 @@ class ApiClient {
       if (error instanceof ApiError) {
         throw error;
       }
-      
+
       // Network or other errors
-      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      if (error instanceof TypeError && error.message === "Failed to fetch") {
         throw new ApiError(
-          'Network error: Could not connect to the server. Please check if the backend is running.',
+          "Network error: Could not connect to the server. Please check if the backend is running.",
           0
         );
       }
-      
+
       throw new ApiError(
-        error instanceof Error ? error.message : 'Unknown error occurred',
+        error instanceof Error ? error.message : "Unknown error occurred",
         0,
         error
       );
@@ -128,17 +130,21 @@ class ApiClient {
   async get<T>(endpoint: string, options?: RequestInit): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
-      method: 'GET',
+      method: "GET",
     });
   }
 
   /**
    * POST request
    */
-  async post<T>(endpoint: string, data?: unknown, options?: RequestInit): Promise<T> {
+  async post<T>(
+    endpoint: string,
+    data?: unknown,
+    options?: RequestInit
+  ): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
-      method: 'POST',
+      method: "POST",
       body: data ? JSON.stringify(data) : undefined,
     });
   }
@@ -146,10 +152,14 @@ class ApiClient {
   /**
    * PUT request
    */
-  async put<T>(endpoint: string, data?: unknown, options?: RequestInit): Promise<T> {
+  async put<T>(
+    endpoint: string,
+    data?: unknown,
+    options?: RequestInit
+  ): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
-      method: 'PUT',
+      method: "PUT",
       body: data ? JSON.stringify(data) : undefined,
     });
   }
@@ -160,17 +170,21 @@ class ApiClient {
   async delete<T>(endpoint: string, options?: RequestInit): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
-      method: 'DELETE',
+      method: "DELETE",
     });
   }
 
   /**
    * PATCH request
    */
-  async patch<T>(endpoint: string, data?: unknown, options?: RequestInit): Promise<T> {
+  async patch<T>(
+    endpoint: string,
+    data?: unknown,
+    options?: RequestInit
+  ): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
-      method: 'PATCH',
+      method: "PATCH",
       body: data ? JSON.stringify(data) : undefined,
     });
   }
@@ -179,3 +193,5 @@ class ApiClient {
 // Export singleton instance
 export const apiClient = new ApiClient();
 
+// Re-export API types for convenience
+export * from "./api-types";
