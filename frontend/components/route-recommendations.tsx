@@ -66,27 +66,41 @@ export function RouteRecommendations({
   const [isLoadingRoutes, setIsLoadingRoutes] = useState(false);
   const [backendError, setBackendError] = useState<string | null>(null);
 
-  // Fetch routes from backend for guest users
+  // Fetch routes from backend (for both logged-in and guest users)
   useEffect(() => {
-    // Only fetch for guest users (not logged in)
-    if (!isLoggedIn) {
-      fetchBackendRoutes();
-    }
-  }, [isLoggedIn, selectedType]);
+    fetchBackendRoutes();
+  }, [isLoggedIn, selectedType, userProfile.id]);
 
   const fetchBackendRoutes = async () => {
     setIsLoadingRoutes(true);
     setBackendError(null);
 
     try {
-      // Build API URL with optional category parameter
-      const categoryParam =
-        selectedType !== "all" ? `&category=${selectedType}` : "";
-      const response = await apiClient.get<ApiRecommendationResponse>(
-        `api/routes/recommendations?limit=20${categoryParam}`
-      );
+      // Build API URL with optional profile_id and category parameters
+      let url = `api/routes/recommendations?limit=20`;
+
+      // Add profile_id for logged-in users (for personalized CBF recommendations)
+      if (isLoggedIn && userProfile.id) {
+        url += `&profile_id=${userProfile.id}`;
+      }
+
+      // Add category filter if selected
+      if (selectedType !== "all") {
+        url += `&category=${selectedType}`;
+      }
+
+      const response = await apiClient.get<ApiRecommendationResponse>(url);
       const routes = transformApiRoutes(response.routes);
       setBackendRoutes(routes);
+
+      // Log personalization status
+      if (response.is_personalized) {
+        console.log(
+          `✨ Showing ${routes.length} personalized routes based on your profile`
+        );
+      } else {
+        console.log(`🎲 Showing ${routes.length} random routes`);
+      }
     } catch (error) {
       console.error("Failed to fetch routes:", error);
       setBackendError(
@@ -98,54 +112,52 @@ export function RouteRecommendations({
     }
   };
 
-  // Simple recommendation logic based on user profile
+  // Get recommended routes (from backend or fallback to mock)
   const getRecommendedRoutes = () => {
-    // Use backend routes for guests if available, otherwise fallback to mock
-    const sourceRoutes =
-      !isLoggedIn && backendRoutes.length > 0 ? backendRoutes : mockRoutes;
+    // Use backend routes if available, otherwise fallback to mock
+    // Backend routes are already sorted by CBF for logged-in users
+    // or randomized for guest users
+    const sourceRoutes = backendRoutes.length > 0 ? backendRoutes : mockRoutes;
 
     let routes = [...sourceRoutes];
 
-    // Filter by type if selected
-    if (selectedType !== "all") {
-      routes = routes.filter((r) => r.type === selectedType);
-    }
+    // Only apply client-side filtering if using mock data
+    if (backendRoutes.length === 0) {
+      // Filter by type if selected
+      if (selectedType !== "all") {
+        routes = routes.filter((r) => r.type === selectedType);
+      }
 
-    // If logged in, personalize recommendations
-    if (isLoggedIn) {
-      routes = routes.sort((a, b) => {
-        let scoreA = 0;
-        let scoreB = 0;
+      // Apply simple client-side sorting for mock data
+      if (isLoggedIn) {
+        routes = routes.sort((a, b) => {
+          let scoreA = 0;
+          let scoreB = 0;
 
-        // Preferred types
-        if (userProfile.preferredTypes.includes(a.type)) scoreA += 10;
-        if (userProfile.preferredTypes.includes(b.type)) scoreB += 10;
+          // Preferred types
+          if (userProfile.preferredTypes.includes(a.type)) scoreA += 10;
+          if (userProfile.preferredTypes.includes(b.type)) scoreB += 10;
 
-        // Fitness level matching
-        const difficultyScore: Record<string, Record<string, number>> = {
-          beginner: { easy: 10, medium: 5, hard: 0, expert: -5 },
-          intermediate: { easy: 5, medium: 10, hard: 5, expert: 0 },
-          advanced: { easy: 0, medium: 5, hard: 10, expert: 5 },
-          expert: { easy: -5, medium: 0, hard: 5, expert: 10 },
-        };
+          // Fitness level matching
+          const difficultyScore: Record<string, Record<string, number>> = {
+            beginner: { easy: 10, medium: 5, hard: 0, expert: -5 },
+            intermediate: { easy: 5, medium: 10, hard: 5, expert: 0 },
+            advanced: { easy: 0, medium: 5, hard: 10, expert: 5 },
+            expert: { easy: -5, medium: 0, hard: 5, expert: 10 },
+          };
 
-        scoreA += difficultyScore[userProfile.fitnessLevel][a.difficulty] || 0;
-        scoreB += difficultyScore[userProfile.fitnessLevel][b.difficulty] || 0;
+          scoreA +=
+            difficultyScore[userProfile.fitnessLevel][a.difficulty] || 0;
+          scoreB +=
+            difficultyScore[userProfile.fitnessLevel][b.difficulty] || 0;
 
-        // Completed routes go to bottom
-        if (userProfile.completedRoutes.includes(a.id)) scoreA -= 20;
-        if (userProfile.completedRoutes.includes(b.id)) scoreB -= 20;
+          // Completed routes go to bottom
+          if (userProfile.completedRoutes.includes(a.id)) scoreA -= 20;
+          if (userProfile.completedRoutes.includes(b.id)) scoreB -= 20;
 
-        // Apply user biases
-        scoreA +=
-          userProfile.difficultyBias *
-          (a.difficulty === "hard" || a.difficulty === "expert" ? 1 : -1);
-        scoreB +=
-          userProfile.difficultyBias *
-          (b.difficulty === "hard" || b.difficulty === "expert" ? 1 : -1);
-
-        return scoreB - scoreA;
-      });
+          return scoreB - scoreA;
+        });
+      }
     }
 
     return routes;
@@ -312,34 +324,35 @@ export function RouteRecommendations({
           </Card>
         </div>
 
-        {/* Loading/Error Banner for Guest Users */}
-        {!isLoggedIn && (
-          <div className="mb-4">
-            {isLoadingRoutes && (
-              <Card className="p-4 bg-muted/50 border-2">
-                <p className="text-sm text-muted-foreground flex items-center gap-2">
-                  <span className="animate-spin">⏳</span>
-                  Loading routes from database...
-                </p>
-              </Card>
-            )}
-            {!isLoadingRoutes && backendError && (
-              <Card className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-500">
-                <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                  ⚠️ {backendError}
-                </p>
-              </Card>
-            )}
-            {!isLoadingRoutes && !backendError && backendRoutes.length > 0 && (
-              <Card className="p-4 bg-green-50 dark:bg-green-900/20 border-2 border-green-500">
-                <p className="text-sm text-green-800 dark:text-green-200">
-                  ✓ Showing {backendRoutes.length} routes from the TrailSaga
-                  database
-                </p>
-              </Card>
-            )}
-          </div>
-        )}
+        {/* Loading/Error Banner */}
+        <div className="mb-4">
+          {isLoadingRoutes && (
+            <Card className="p-4 bg-muted/50 border-2">
+              <p className="text-sm text-muted-foreground flex items-center gap-2">
+                <span className="animate-spin">⏳</span>
+                {isLoggedIn
+                  ? "Loading personalized recommendations..."
+                  : "Loading routes from database..."}
+              </p>
+            </Card>
+          )}
+          {!isLoadingRoutes && backendError && (
+            <Card className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-500">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                ⚠️ {backendError}
+              </p>
+            </Card>
+          )}
+          {!isLoadingRoutes && !backendError && backendRoutes.length > 0 && (
+            <Card className="p-4 bg-green-50 dark:bg-green-900/20 border-2 border-green-500">
+              <p className="text-sm text-green-800 dark:text-green-200">
+                {isLoggedIn
+                  ? `✨ Showing ${backendRoutes.length} personalized routes based on your profile`
+                  : `✓ Showing ${backendRoutes.length} routes from the TrailSaga database`}
+              </p>
+            </Card>
+          )}
+        </div>
 
         {/* Activity Type Filter */}
         <Tabs

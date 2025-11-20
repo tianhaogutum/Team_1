@@ -63,6 +63,12 @@ export interface ApiProfileCreate {
   narrative: string; // "adventure" | "mystery" | "playful"
 }
 
+export interface ApiProfileCreateResponse {
+  id: number;
+  welcome_summary: string;
+  user_vector: Record<string, any>;
+}
+
 export interface ApiSouvenir {
   id: number;
   demo_profile_id: number;
@@ -120,15 +126,18 @@ export function mapApiCategory(
   if (!categoryName) return "hiking";
 
   const lower = categoryName.toLowerCase();
-  
+
   // Running: "Jogging", "Trail running"
-  if (lower.includes("run") || lower.includes("jogging"))
-    return "running";
-  
+  if (lower.includes("run") || lower.includes("jogging")) return "running";
+
   // Cycling: "Cycling", "Mountainbiking", "Long distance cycling"
-  if (lower.includes("cycling") || lower.includes("mountain") || lower.includes("bike"))
+  if (
+    lower.includes("cycling") ||
+    lower.includes("mountain") ||
+    lower.includes("bike")
+  )
     return "cycling";
-  
+
   // Hiking: "Theme trail", "Hiking trail", and everything else
   return "hiking";
 }
