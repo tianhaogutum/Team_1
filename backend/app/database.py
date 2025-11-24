@@ -1,6 +1,7 @@
 """
 Database configuration and session management using SQLAlchemy.
 """
+from __future__ import annotations
 from contextlib import asynccontextmanager
 from pathlib import Path
 
