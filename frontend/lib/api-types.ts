@@ -23,6 +23,31 @@ export interface ApiMiniQuest {
   xp_reward: number;
 }
 
+export interface RecommendationScoreBreakdown {
+  difficulty: {
+    score: number;
+    weight: number;
+    weighted_score: number;
+    user_range: [number, number];
+    route_value: number;
+  };
+  distance: {
+    score: number;
+    weight: number;
+    weighted_score: number;
+    user_range: [number, number];
+    route_value: number;
+  };
+  tags: {
+    score: number;
+    weight: number;
+    weighted_score: number;
+    user_tags: string[];
+    route_tags: string[];
+  };
+  total: number;
+}
+
 export interface ApiRoute {
   id: number;
   title: string;
@@ -41,6 +66,8 @@ export interface ApiRoute {
   story_epilogue_body: string | null;
   breakpoints: ApiBreakpoint[];
   is_locked: boolean; // Computed field based on user XP
+  recommendation_score?: number | null; // CBF score (0.0-1.0)
+  recommendation_score_breakdown?: RecommendationScoreBreakdown | null; // Score components
 }
 
 export interface ApiRecommendationResponse {

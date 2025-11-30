@@ -14,7 +14,6 @@
 - **Status**: Negative feedback API not implemented
 - **Backend**: Missing API endpoint for negative feedback
 - **Frontend**: Button exists but not calling any API
-
 ---
 
 ## 🟡 Medium Priority
@@ -58,3 +57,6 @@
 - Prioritize features based on user impact and technical complexity
 - Consider batch processing for AI-generated content to improve performance
 - Ensure FE and BE are properly wired before marking features as complete
+
+暂定实现，未来实现的功能：
+1. 登陆功能，数据的持久化

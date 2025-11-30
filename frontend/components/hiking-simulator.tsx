@@ -41,9 +41,28 @@ export function HikingSimulator({
   const [showEpilogueModal, setShowEpilogueModal] = useState(false);
   const [isMovingToBreakpoint, setIsMovingToBreakpoint] = useState(false);
 
-  const currentBreakpoint = route.breakpoints[currentBreakpointIndex];
-  const progress = (currentBreakpointIndex / (route.breakpoints.length - 1)) * 100;
-  const isLastBreakpoint = currentBreakpointIndex === route.breakpoints.length - 1;
+  // Guard against empty breakpoints array
+  if (!route.breakpoints || route.breakpoints.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-primary/10 via-background to-secondary/10 flex items-center justify-center">
+        <Card className="p-8 border-4 border-destructive">
+          <h2 className="text-2xl font-bold text-destructive mb-4">Invalid Route</h2>
+          <p className="text-muted-foreground mb-4">
+            This route has no breakpoints. Please select a different route.
+          </p>
+          <Button onClick={onExit}>Go Back</Button>
+        </Card>
+      </div>
+    );
+  }
+
+  // Ensure index is within bounds
+  const safeIndex = Math.min(currentBreakpointIndex, route.breakpoints.length - 1);
+  const currentBreakpoint = route.breakpoints[safeIndex];
+  const progress = route.breakpoints.length > 1 
+    ? (safeIndex / (route.breakpoints.length - 1)) * 100 
+    : 0;
+  const isLastBreakpoint = safeIndex === route.breakpoints.length - 1;
 
   useEffect(() => {
     if (route.prologue) {
@@ -53,7 +72,7 @@ export function HikingSimulator({
 
   useEffect(() => {
     if (isLastBreakpoint && !showEpilogueModal && !showCompletion && !showPrologueModal) {
-      const hasQuestAtFinal = currentBreakpoint.quest && !completedQuests.includes(currentBreakpoint.quest.id);
+      const hasQuestAtFinal = currentBreakpoint?.quest && !completedQuests.includes(currentBreakpoint.quest.id);
       
       if (!hasQuestAtFinal) {
         if (route.epilogue) {
@@ -63,18 +82,19 @@ export function HikingSimulator({
         }
       }
     }
-  }, [isLastBreakpoint, completedQuests, showPrologueModal]);
+  }, [isLastBreakpoint, completedQuests, showPrologueModal, currentBreakpoint, showEpilogueModal, showCompletion, route.epilogue]);
 
   const handleNextBreakpoint = () => {
     if (!isLastBreakpoint) {
       setIsMovingToBreakpoint(true);
       
       setTimeout(() => {
-        setCurrentBreakpointIndex(currentBreakpointIndex + 1);
+        const nextIndex = safeIndex + 1;
+        setCurrentBreakpointIndex(nextIndex);
         setIsMovingToBreakpoint(false);
         
-        const nextBreakpoint = route.breakpoints[currentBreakpointIndex + 1];
-        if (nextBreakpoint.content) {
+        const nextBreakpoint = route.breakpoints[nextIndex];
+        if (nextBreakpoint?.content) {
           setShowChapterModal(true);
         }
       }, 800);
@@ -91,7 +111,7 @@ export function HikingSimulator({
 
   const handleAcceptQuestFromModal = () => {
     setShowChapterModal(false);
-    if (currentBreakpoint.quest && !completedQuests.includes(currentBreakpoint.quest.id)) {
+    if (currentBreakpoint?.quest && !completedQuests.includes(currentBreakpoint.quest.id)) {
       setActiveQuest(currentBreakpoint.quest);
     }
   };
@@ -152,7 +172,7 @@ export function HikingSimulator({
   };
 
   const totalQuests = route.breakpoints.filter(bp => bp.quest).length;
-  const currentQuestAtBreakpoint = currentBreakpoint.quest && !completedQuests.includes(currentBreakpoint.quest.id);
+  const currentQuestAtBreakpoint = currentBreakpoint?.quest && !completedQuests.includes(currentBreakpoint.quest.id);
 
   if (showCompletion) {
     return (
@@ -185,12 +205,12 @@ export function HikingSimulator({
           type="chapter"
           title={currentBreakpoint.name}
           routeName={route.name}
-          chapterNumber={currentBreakpointIndex + 1}
+                  chapterNumber={safeIndex + 1}
           content={currentBreakpoint.content}
           ctaText="Continue"
           onContinue={handleChapterContinue}
-          questTitle={currentBreakpoint.quest && !completedQuests.includes(currentBreakpoint.quest.id) ? currentBreakpoint.quest.title : undefined}
-          questDescription={currentBreakpoint.quest && !completedQuests.includes(currentBreakpoint.quest.id) ? currentBreakpoint.quest.description : undefined}
+          questTitle={currentBreakpoint?.quest && !completedQuests.includes(currentBreakpoint.quest.id) ? currentBreakpoint.quest.title : undefined}
+          questDescription={currentBreakpoint?.quest && !completedQuests.includes(currentBreakpoint.quest.id) ? currentBreakpoint.quest.description : undefined}
           onAcceptQuest={handleAcceptQuestFromModal}
         />
       )}
@@ -243,7 +263,7 @@ export function HikingSimulator({
           <div>
             <RouteSimulationMap
               route={route}
-              currentBreakpointIndex={currentBreakpointIndex}
+              currentBreakpointIndex={safeIndex}
               completedBreakpoints={completedQuests}
             />
           </div>
@@ -260,24 +280,24 @@ export function HikingSimulator({
                       MINI QUEST
                     </Badge>
                     <h2 className="text-2xl font-bold text-foreground mb-2">
-                      {currentBreakpoint.name}
+                      {currentBreakpoint?.name || 'Unknown Location'}
                     </h2>
                   </div>
                 </div>
                 
                 <div className="bg-accent/10 p-4 rounded-lg mb-4 border-2 border-accent">
                   <p className="text-sm text-foreground leading-relaxed mb-3">
-                    {currentBreakpoint.quest!.description}
+                    {currentBreakpoint?.quest?.description || 'No description available'}
                   </p>
                   <div className="flex items-center gap-2 text-sm">
                     <Sparkles className="w-4 h-4 text-accent" />
-                    <span className="font-semibold text-accent">+{currentBreakpoint.quest!.xpReward} XP</span>
+                    <span className="font-semibold text-accent">+{currentBreakpoint?.quest?.xpReward || 0} XP</span>
                     <span className="text-muted-foreground">· +1 Memory</span>
                   </div>
                 </div>
 
                 <Button
-                  onClick={() => setActiveQuest(currentBreakpoint.quest!)}
+                  onClick={() => currentBreakpoint?.quest && setActiveQuest(currentBreakpoint.quest)}
                   className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-bold border-4 border-border"
                   size="lg"
                 >
@@ -292,7 +312,7 @@ export function HikingSimulator({
                   </div>
                   <div className="flex-1">
                     <h2 className="text-2xl font-bold text-foreground mb-2">
-                      Chapter {currentBreakpointIndex + 1} • {currentBreakpoint.name}
+                      Chapter {safeIndex + 1} • {currentBreakpoint?.name || 'Unknown'}
                     </h2>
                   </div>
                 </div>
@@ -312,14 +332,14 @@ export function HikingSimulator({
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Breakpoints</span>
                       <span className="font-semibold text-foreground">
-                        {currentBreakpointIndex + 1} / {route.breakpoints.length}
+                        {safeIndex + 1} / {route.breakpoints.length}
                       </span>
                     </div>
 
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Distance walked</span>
                       <span className="font-semibold text-foreground">
-                        {currentBreakpoint.distance} / {route.distance} km
+                        {currentBreakpoint?.distance || 0} / {route.distance} km
                       </span>
                     </div>
 

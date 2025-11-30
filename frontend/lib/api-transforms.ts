@@ -7,6 +7,7 @@ import {
   ApiBreakpoint,
   mapApiDifficulty,
   mapApiCategory,
+  RecommendationScoreBreakdown,
 } from "./api-types";
 import { Route, Breakpoint, MiniQuest } from "./mock-data";
 
@@ -105,6 +106,8 @@ export function transformApiRoute(apiRoute: ApiRoute): Route {
     breakpoints: apiRoute.breakpoints.map(transformBreakpoint),
     prologue: apiRoute.story_prologue_body || undefined,
     epilogue: apiRoute.story_epilogue_body || undefined,
+    recommendationScore: apiRoute.recommendation_score ?? undefined,
+    recommendationScoreBreakdown: apiRoute.recommendation_score_breakdown ?? undefined,
   };
 }
 

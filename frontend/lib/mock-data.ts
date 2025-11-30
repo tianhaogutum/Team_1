@@ -5,6 +5,31 @@
 // - xpReward should come from ApiRoute.base_xp_reward (the Base XP earned from completing the route)
 // - xpRequired corresponds to ApiRoute.xp_required (XP needed to unlock the route)
 
+export interface RecommendationScoreBreakdown {
+  difficulty: {
+    score: number;
+    weight: number;
+    weighted_score: number;
+    user_range: [number, number];
+    route_value: number;
+  };
+  distance: {
+    score: number;
+    weight: number;
+    weighted_score: number;
+    user_range: [number, number];
+    route_value: number;
+  };
+  tags: {
+    score: number;
+    weight: number;
+    weighted_score: number;
+    user_tags: string[];
+    route_tags: string[];
+  };
+  total: number;
+}
+
 export interface Route {
   id: string;
   name: string;
@@ -25,6 +50,8 @@ export interface Route {
   breakpoints: Breakpoint[];
   prologue?: string;
   epilogue?: string;
+  recommendationScore?: number | null; // CBF recommendation score (0.0-1.0)
+  recommendationScoreBreakdown?: RecommendationScoreBreakdown | null; // Score breakdown
 }
 
 export interface Breakpoint {

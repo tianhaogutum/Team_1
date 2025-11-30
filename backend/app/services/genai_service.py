@@ -195,6 +195,30 @@ Profile:
             generated_text = ' '.join(line.strip('*#').strip() for line in lines if line.strip())
         
         if generated_text:
+            # Print LLM generated content to console
+            print("\n" + "="*80)
+            print("✨ LLM GENERATED: Welcome Summary")
+            print("="*80)
+            print(f"📋 Profile: Fitness={questionnaire.fitness}, Type={questionnaire.type}, Narrative={questionnaire.narrative}")
+            print(f"🤖 Model: {get_settings().ollama_model}")
+            print("-"*80)
+            print(generated_text)
+            print("="*80 + "\n")
+            
+            # Log to UI
+            from app.llm_logger import log_llm_output
+            log_llm_output(
+                message_type="welcome",
+                title="✨ Welcome Summary Generated",
+                content=generated_text,
+                metadata={
+                    "fitness": questionnaire.fitness,
+                    "type": questionnaire.type,
+                    "narrative": questionnaire.narrative,
+                    "model": get_settings().ollama_model
+                }
+            )
+            
             return generated_text
         
         raise ValueError("Empty response from Ollama")
@@ -285,6 +309,33 @@ Level: {user_level}<|eot_id|><|start_header_id|>assistant<|end_header_id|>
         
         generated_text = response.strip()
         if generated_text:
+            # Print LLM generated content to console
+            print("\n" + "="*80)
+            print("✨ LLM GENERATED: Post-Run Summary")
+            print("="*80)
+            print(f"🗺️ Route: {route_title}")
+            print(f"📏 Distance: {route_length_km} km")
+            print(f"🏆 Quests: {quests_completed}/{total_quests} ({quest_completion_rate:.0f}%)")
+            print(f"📈 Level: {user_level}")
+            print("-"*80)
+            print(generated_text)
+            print("="*80 + "\n")
+            
+            # Log to UI
+            from app.llm_logger import log_llm_output
+            log_llm_output(
+                message_type="post_run",
+                title=f"🏁 Post-Run Summary: {route_title}",
+                content=generated_text,
+                metadata={
+                    "route_title": route_title,
+                    "distance_km": route_length_km,
+                    "quests_completed": quests_completed,
+                    "total_quests": total_quests,
+                    "user_level": user_level
+                }
+            )
+            
             return generated_text
         
         raise ValueError("Empty response from Ollama")

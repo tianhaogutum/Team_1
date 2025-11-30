@@ -182,7 +182,7 @@ def calculate_tag_score(user_tags: list[str], route_tags: list[str]) -> float:
     return len(intersection) / len(union)
 
 
-def calculate_cbf_score(user_vector: dict, route_vector: dict) -> float:
+def calculate_cbf_score(user_vector: dict, route_vector: dict) -> tuple[float, dict]:
     """
     Calculate overall CBF similarity score between user and route.
     
@@ -195,8 +195,8 @@ def calculate_cbf_score(user_vector: dict, route_vector: dict) -> float:
     
     Returns
     -------
-    float
-        Overall similarity score between 0.0 and 1.0
+    tuple[float, dict]
+        Overall similarity score between 0.0 and 1.0, and score breakdown
     """
     # Calculate component scores
     difficulty_score = calculate_difficulty_score(
@@ -222,7 +222,33 @@ def calculate_cbf_score(user_vector: dict, route_vector: dict) -> float:
         SCORE_WEIGHTS["tags"] * tag_score
     )
     
-    return final_score
+    # Return score and breakdown
+    score_breakdown = {
+        "difficulty": {
+            "score": difficulty_score,
+            "weight": SCORE_WEIGHTS["difficulty"],
+            "weighted_score": SCORE_WEIGHTS["difficulty"] * difficulty_score,
+            "user_range": user_vector.get("difficulty_range", [0, 3]),
+            "route_value": route_vector["difficulty"],
+        },
+        "distance": {
+            "score": distance_score,
+            "weight": SCORE_WEIGHTS["distance"],
+            "weighted_score": SCORE_WEIGHTS["distance"] * distance_score,
+            "user_range": [user_vector.get("min_distance_km", 0.0), user_vector.get("max_distance_km", 100.0)],
+            "route_value": route_vector["length_km"],
+        },
+        "tags": {
+            "score": tag_score,
+            "weight": SCORE_WEIGHTS["tags"],
+            "weighted_score": SCORE_WEIGHTS["tags"] * tag_score,
+            "user_tags": user_vector.get("preferred_tags", []),
+            "route_tags": route_vector["tags"],
+        },
+        "total": final_score,
+    }
+    
+    return final_score, score_breakdown
 
 
 async def get_recommended_routes(
@@ -287,12 +313,17 @@ async def get_recommended_routes(
     route_scores = []
     for route in routes:
         route_vector = extract_route_vector(route)
-        score = calculate_cbf_score(user_vector, route_vector)
-        route_scores.append((route, score))
+        score, score_breakdown = calculate_cbf_score(user_vector, route_vector)
+        route_scores.append((route, score, score_breakdown))
     
-    # Sort by score (descending) and return top N
+    # Sort by score (descending) and return top N with scores
     route_scores.sort(key=lambda x: x[1], reverse=True)
-    recommended_routes = [route for route, score in route_scores[:limit]]
+    # Store scores as route attributes for API response
+    for route, score, score_breakdown in route_scores[:limit]:
+        route.recommendation_score = score
+        route.recommendation_score_breakdown = score_breakdown
+    
+    recommended_routes = [route for route, score, _ in route_scores[:limit]]
     
     return recommended_routes
 

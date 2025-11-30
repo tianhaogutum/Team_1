@@ -5,7 +5,7 @@ This module provides endpoints for:
 - Generating complete stories for routes (US-06, US-07)
 - Retrieving existing story content
 """
-from typing import Annotated
+from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -28,8 +28,8 @@ router = APIRouter(prefix="/routes", tags=["routes"])
 
 @router.get("/recommendations", response_model=RecommendationResponse)
 async def get_route_recommendations(
-    profile_id: int | None = None,
-    category: str | None = None,
+    profile_id: Optional[int] = None,
+    category: Optional[str] = None,
     limit: int = 20,
     db: Annotated[AsyncSession, Depends(get_db)] = ...,
 ):
@@ -78,6 +78,13 @@ async def get_route_recommendations(
             route_dict["is_locked"] = profile.total_xp < route.xp_required
         else:
             route_dict["is_locked"] = False
+        
+        # Add recommendation score if available (set by recommendation_service)
+        if hasattr(route, 'recommendation_score'):
+            route_dict["recommendation_score"] = route.recommendation_score
+        if hasattr(route, 'recommendation_score_breakdown'):
+            route_dict["recommendation_score_breakdown"] = route.recommendation_score_breakdown
+        
         route_responses.append(RouteResponse(**route_dict))
     
     return RecommendationResponse(

@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     # Ollama LLM configuration (for GenAI story generation)
     # Using Llama3.1:8b for high-quality, structured output
     ollama_api_url: str = Field(
-        default="http://localhost:11434/api/generate",
+        default="http://127.0.0.1:11434/api/generate",
         env="OLLAMA_API_URL",
         description="Ollama API endpoint URL",
     )

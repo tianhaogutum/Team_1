@@ -29,6 +29,15 @@ class BreakpointResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class RecommendationScoreBreakdown(BaseModel):
+    """Breakdown of recommendation score components."""
+    
+    difficulty: dict
+    distance: dict
+    tags: dict
+    total: float
+
+
 class RouteResponse(BaseModel):
     """Single route response schema with full details."""
     
@@ -49,6 +58,8 @@ class RouteResponse(BaseModel):
     story_epilogue_body: Optional[str] = None
     breakpoints: list[BreakpointResponse] = []
     is_locked: bool = False  # Computed field based on user XP
+    recommendation_score: Optional[float] = None  # CBF score (0.0-1.0)
+    recommendation_score_breakdown: Optional[RecommendationScoreBreakdown] = None  # Score components
 
     model_config = ConfigDict(from_attributes=True)
 

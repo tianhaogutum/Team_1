@@ -7,6 +7,7 @@ This module implements:
 - PATCH /api/profiles/{id} - Update profile
 """
 import json
+import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -25,6 +26,8 @@ from app.services.user_profile_service import (
     generate_fallback_welcome,
     translate_questionnaire_to_vector,
 )
+
+logger = logging.getLogger(__name__)
 
 
 router = APIRouter(prefix="/profiles", tags=["profiles"])
@@ -62,10 +65,19 @@ async def submit_questionnaire(
     # 2. Generate welcome summary with GenAI (with fallback)
     try:
         welcome_summary = await generate_welcome_summary(questionnaire)
+    except HTTPException as e:
+        # Log HTTP errors from Ollama (e.g., 503 Service Unavailable)
+        logger.warning(
+            f"GenAI service unavailable (status {e.status_code}), using fallback: {e.detail}",
+            exc_info=True
+        )
+        welcome_summary = generate_fallback_welcome(questionnaire)
     except Exception as e:
-        # Log the error (in production, use proper logging)
-        print(f"GenAI failed, using fallback: {e}")
-        # Fallback to rule-based summary
+        # Log other unexpected errors
+        logger.warning(
+            f"GenAI generation failed, using fallback: {type(e).__name__}: {str(e)}",
+            exc_info=True
+        )
         welcome_summary = generate_fallback_welcome(questionnaire)
     
     # 3. Create database record
@@ -168,4 +180,38 @@ async def update_profile(
     await db.refresh(profile)
     
     return ProfileResponse.model_validate(profile)
+
+
+@router.delete("/{profile_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_profile(
+    profile_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    """
+    Delete a user profile from the database.
+    
+    Parameters
+    ----------
+    profile_id : int
+        Profile ID to delete
+    db : AsyncSession
+        Database session
+    
+    Raises
+    ------
+    HTTPException
+        404 if profile not found
+    """
+    profile = await db.get(DemoProfile, profile_id)
+    
+    if profile is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Profile with id {profile_id} not found",
+        )
+    
+    await db.delete(profile)
+    await db.flush()  # Flush to ensure deletion is processed
+    
+    return None
 

@@ -19,6 +19,10 @@ class ApiClient {
 
   constructor() {
     this.baseURL = API_BASE_URL;
+    // Debug: Log the API base URL in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔗 API Client initialized with base URL:', this.baseURL);
+    }
   }
 
   /**
@@ -72,11 +76,18 @@ class ApiClient {
       headers["X-Profile-Id"] = profileId;
     }
 
+    // Create AbortController for timeout (30 seconds for GenAI calls)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+
     try {
       const response = await fetch(url, {
         ...options,
         headers,
+        signal: controller.signal,
       });
+      
+      clearTimeout(timeoutId);
 
       // Handle non-JSON responses
       const contentType = response.headers.get("content-type");
@@ -104,14 +115,24 @@ class ApiClient {
 
       return data as T;
     } catch (error) {
+      clearTimeout(timeoutId);
+      
       if (error instanceof ApiError) {
         throw error;
+      }
+
+      // Handle timeout/abort
+      if (error instanceof Error && error.name === "AbortError") {
+        throw new ApiError(
+          "Request timeout: The server took too long to respond. This might be due to AI generation taking longer than expected.",
+          0
+        );
       }
 
       // Network or other errors
       if (error instanceof TypeError && error.message === "Failed to fetch") {
         throw new ApiError(
-          "Network error: Could not connect to the server. Please check if the backend is running.",
+          "Network error: Could not connect to the server. Please check if the backend is running on http://localhost:8000",
           0
         );
       }

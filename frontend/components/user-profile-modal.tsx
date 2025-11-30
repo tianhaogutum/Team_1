@@ -8,6 +8,7 @@ import { UserProfile, mockRoutes } from '@/lib/mock-data';
 import { X, Trophy, Target, Mountain, MapPin, TrendingUp, Sparkles, Award, Calendar, RotateCcw } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useState } from 'react';
+import { apiClient } from '@/lib/api-client';
 
 interface UserProfileModalProps {
   userProfile: UserProfile;
@@ -22,9 +23,26 @@ export function UserProfileModal({ userProfile, onClose }: UserProfileModalProps
   const totalDistance = completedRoutes.reduce((sum, r) => sum + r.distance, 0);
   const totalElevation = completedRoutes.reduce((sum, r) => sum + r.elevation, 0);
 
-  const handleResetProfile = () => {
-    localStorage.clear();
-    window.location.href = '/';
+  const handleResetProfile = async () => {
+    try {
+      // Try to delete profile from backend if we have a backend profile ID
+      const profileId = userProfile.id;
+      if (profileId && !isNaN(parseInt(profileId, 10))) {
+        const backendProfileId = parseInt(profileId, 10);
+        try {
+          await apiClient.delete(`api/profiles/${backendProfileId}`);
+        } catch (error) {
+          // If deletion fails, continue with local reset anyway
+          console.warn('Failed to delete profile from backend:', error);
+        }
+      }
+    } catch (error) {
+      console.warn('Error during profile deletion:', error);
+    } finally {
+      // Always clear localStorage and redirect
+      localStorage.clear();
+      window.location.href = '/';
+    }
   };
 
   const achievements = [
@@ -90,8 +108,8 @@ export function UserProfileModal({ userProfile, onClose }: UserProfileModalProps
   const lockedAchievements = achievements.filter(a => !a.unlocked);
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <Card className="max-w-4xl w-full my-8 border-4 border-border shadow-2xl">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-start justify-center p-4 pt-8 overflow-y-auto">
+      <Card className="max-w-4xl w-full my-auto border-4 border-border shadow-2xl">
         {/* Header */}
         <div className="relative p-8 bg-linear-to-r from-primary/20 via-secondary/20 to-accent/20 border-b-4 border-border">
           <Button

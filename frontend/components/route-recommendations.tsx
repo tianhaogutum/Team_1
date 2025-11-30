@@ -28,6 +28,7 @@ import { HikingSimulator } from "@/components/hiking-simulator";
 import { FeedbackDialog } from "@/components/feedback-dialog";
 import { UserProfileModal } from "@/components/user-profile-modal";
 import { SouvenirGallery } from "@/components/souvenir-gallery";
+import { RecommendationScoreModal } from "@/components/recommendation-score-modal";
 
 interface RouteRecommendationsProps {
   userProfile: UserProfile;
@@ -65,6 +66,7 @@ export function RouteRecommendations({
   const [backendRoutes, setBackendRoutes] = useState<Route[]>([]);
   const [isLoadingRoutes, setIsLoadingRoutes] = useState(false);
   const [backendError, setBackendError] = useState<string | null>(null);
+  const [scoreModalRoute, setScoreModalRoute] = useState<Route | null>(null);
 
   // Fetch routes from backend (for both logged-in and guest users)
   useEffect(() => {
@@ -80,8 +82,12 @@ export function RouteRecommendations({
       let url = `api/routes/recommendations?limit=20`;
 
       // Add profile_id for logged-in users (for personalized CBF recommendations)
+      // Convert string ID to integer (backend expects int, frontend stores as string)
       if (isLoggedIn && userProfile.id) {
-        url += `&profile_id=${userProfile.id}`;
+        const profileIdNum = parseInt(userProfile.id, 10);
+        if (!isNaN(profileIdNum)) {
+          url += `&profile_id=${profileIdNum}`;
+        }
       }
 
       // Add category filter if selected
@@ -423,11 +429,30 @@ export function RouteRecommendations({
                     </div>
                   )}
                   {isCompleted && (
-                    <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
+                    <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1 z-20">
                       <CheckCircle2 className="w-4 h-4" />
                       Completed
                     </div>
                   )}
+                  {/* Recommendation Score Badge */}
+                  {isLoggedIn &&
+                    route.recommendationScore !== undefined &&
+                    route.recommendationScore !== null &&
+                    route.recommendationScoreBreakdown && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setScoreModalRoute(route);
+                        }}
+                        className={`absolute ${
+                          isCompleted ? "top-12" : "top-2"
+                        } right-2 bg-primary text-primary-foreground px-3 py-1.5 rounded-full text-sm font-semibold flex items-center gap-1.5 hover:bg-primary/90 transition-colors shadow-lg z-10`}
+                        title="Click to see how this score was calculated"
+                      >
+                        <TrendingUp className="w-3.5 h-3.5" />
+                        {Math.round(route.recommendationScore * 100)}%
+                      </button>
+                    )}
                   <Badge
                     className="absolute top-2 left-2"
                     variant={
@@ -539,6 +564,20 @@ export function RouteRecommendations({
           onClose={() => setShowProfile(false)}
         />
       )}
+
+      {/* Recommendation Score Modal */}
+      {scoreModalRoute &&
+        scoreModalRoute.recommendationScore !== undefined &&
+        scoreModalRoute.recommendationScore !== null &&
+        scoreModalRoute.recommendationScoreBreakdown && (
+          <RecommendationScoreModal
+            score={scoreModalRoute.recommendationScore}
+            breakdown={scoreModalRoute.recommendationScoreBreakdown}
+            routeName={scoreModalRoute.name}
+            open={true}
+            onClose={() => setScoreModalRoute(null)}
+          />
+        )}
     </div>
   );
 }

@@ -178,6 +178,32 @@ Generate the story framework in JSON format.<|eot_id|><|start_header_id|>assista
         if not all(key in result for key in ['title', 'outline', 'prologue', 'epilogue']):
             raise ValueError("Missing required fields in response")
         
+        # Print LLM generated content to console
+        print("\n" + "="*80)
+        print("✨ LLM GENERATED: Story Skeleton")
+        print("="*80)
+        print(f"🗺️ Route: {route_context.get('name', 'Unknown')}")
+        print(f"📝 Narrative Style: {narrative_style}")
+        print("-"*80)
+        print(f"📖 Title: {result.get('title', 'N/A')}")
+        print(f"🎯 Outline: {result.get('outline', 'N/A')}")
+        print(f"📜 Prologue: {result.get('prologue', 'N/A')[:100]}...")
+        print(f"🏁 Epilogue: {result.get('epilogue', 'N/A')[:100]}...")
+        print("="*80 + "\n")
+        
+        # Log to UI
+        from app.llm_logger import log_llm_output
+        log_llm_output(
+            message_type="skeleton",
+            title=f"📖 Story Skeleton: {result.get('title', 'Adventure')}",
+            content=f"**Outline:** {result.get('outline', 'N/A')}\n\n**Prologue:** {result.get('prologue', 'N/A')[:200]}...\n\n**Epilogue:** {result.get('epilogue', 'N/A')[:200]}...",
+            metadata={
+                "route_name": route_context.get('name', 'Unknown'),
+                "narrative_style": narrative_style,
+                "title": result.get('title', 'N/A')
+            }
+        )
+        
         return result
             
     except Exception as e:
@@ -186,8 +212,8 @@ Generate the story framework in JSON format.<|eot_id|><|start_header_id|>assista
         return {
             "title": f"Adventure at {route_context['name']}",
             "outline": "Embark on a journey to discover the beauty of nature.",
-            "prologue": "Your adventure begins here. The path ahead is full of wonder and challenge. Each step brings you closer to understanding the magic of this place.",
-            "epilogue": "As your journey ends, you carry these memories forward. The trail has taught you something valuable about yourself and the world."
+            "prologue": "Your adventure begins here. The path ahead is full of wonder and challenge. Each step brings you closer to understanding the magic of this place. 🤍",
+            "epilogue": "As your journey ends, you carry these memories forward. The trail has taught you something valuable about yourself and the world. 🤍"
         }
 
 
@@ -286,6 +312,40 @@ The main_quest must flow smoothly: Prologue → Point 0 → Point 1 → ... → 
         for point in story_points:
             if not all(key in point for key in ['index', 'main_quest', 'side_plot']):
                 raise ValueError("Missing required fields in story point")
+        
+        # Print LLM generated content to console
+        print("\n" + "="*80)
+        print("✨ LLM GENERATED: Story Points")
+        print("="*80)
+        print(f"📊 Generated {len(story_points)} story points")
+        print(f"📝 Narrative Style: {narrative_style}")
+        print("-"*80)
+        for i, point in enumerate(story_points[:3]):  # Show first 3 points
+            print(f"📍 Point {point.get('index', i)}:")
+            print(f"   🎯 Main Quest: {point.get('main_quest', 'N/A')[:80]}...")
+            print(f"   📖 Side Plot: {point.get('side_plot', 'N/A')[:80]}...")
+        if len(story_points) > 3:
+            print(f"   ... and {len(story_points) - 3} more points")
+        print("="*80 + "\n")
+        
+        # Log to UI
+        from app.llm_logger import log_llm_output
+        points_preview = "\n\n".join([
+            f"📍 Point {p.get('index', i)}:\n🎯 {p.get('main_quest', 'N/A')[:100]}..."
+            for i, p in enumerate(story_points[:3])
+        ])
+        if len(story_points) > 3:
+            points_preview += f"\n\n... and {len(story_points) - 3} more points"
+        
+        log_llm_output(
+            message_type="story_points",
+            title=f"📍 Story Points Generated ({len(story_points)} points)",
+            content=points_preview,
+            metadata={
+                "num_points": len(story_points),
+                "narrative_style": narrative_style
+            }
+        )
             
     except Exception as e:
         # Fallback: generate template points
@@ -306,8 +366,8 @@ The main_quest must flow smoothly: Prologue → Point 0 → Point 1 → ... → 
             
             story_points.append({
                 "index": i,
-                "main_quest": f"You press forward on your quest, each step bringing you closer to understanding this place's true nature. At {poi_name}, you pause to reflect on how far you've come and how much further there is to go.",
-                "side_plot": f"The area surrounding {poi_name} has its own distinct character. The landscape tells a story of time and nature working together to create something beautiful and unique."
+                "main_quest": f"You press forward on your quest, each step bringing you closer to understanding this place's true nature. At {poi_name}, you pause to reflect on how far you've come and how much further there is to go. 🤍",
+                "side_plot": f"The area surrounding {poi_name} has its own distinct character. The landscape tells a story of time and nature working together to create something beautiful and unique. 🤍"
             })
     
     # Ensure correct indices and return only needed points
