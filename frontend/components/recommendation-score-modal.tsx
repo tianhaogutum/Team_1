@@ -210,7 +210,7 @@ export function RecommendationScoreModal({
           </div>
 
           {/* Algorithm Info */}
-          <div className="p-4 bg-muted/50 rounded-lg border border-border">
+          <div className="p-4 bg-muted/50 rounded-lg border border-border space-y-3">
             <p className="text-xs text-muted-foreground">
               <strong>How it works:</strong> We use Content-Based Filtering
               (CBF) to match routes to your preferences. Each factor (difficulty,
@@ -218,10 +218,34 @@ export function RecommendationScoreModal({
               weighted averages. The final score ranges from 0% (poor match) to
               100% (perfect match).
             </p>
+            
+            {/* Feedback Penalty Info */}
+            {breakdown.feedback_adjusted && breakdown.feedback_penalty !== undefined && (
+              <div className="p-3 bg-orange-50 dark:bg-orange-950/20 rounded border border-orange-200 dark:border-orange-800">
+                <p className="text-xs font-semibold text-orange-900 dark:text-orange-200 mb-1">
+                  ⚠️ Feedback Penalty Applied
+                </p>
+                <p className="text-xs text-orange-800 dark:text-orange-300">
+                  This route has received negative feedback from you. The score has been reduced:
+                </p>
+                <ul className="text-xs text-orange-700 dark:text-orange-400 mt-2 ml-4 list-disc space-y-1">
+                  <li>1 feedback: Score reduced to 50%</li>
+                  <li>2 feedbacks: Score reduced to 10%</li>
+                  <li>3+ feedbacks: Score reduced to 1%</li>
+                </ul>
+                <p className="text-xs text-orange-800 dark:text-orange-300 mt-2">
+                  Base score: {Math.round((breakdown.base_score || score) * 100)}% → 
+                  Final score: {Math.round(score * 100)}% 
+                  (Penalty: {Math.round((breakdown.feedback_penalty || 1) * 100)}%)
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </DialogContent>
     </Dialog>
   );
 }
+
+
 

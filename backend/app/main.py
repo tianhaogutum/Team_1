@@ -10,11 +10,12 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, StreamingResponse
 
-from .api.v1 import profiles, routes
+from .api.v1 import profiles, routes, souvenirs, achievements, logs
 from .database import close_db, init_db, get_db
 from .models.entities import DemoProfile, Route
 from .settings import get_settings
 from .llm_logger import get_recent_messages, _llm_messages
+from .logger import init_logging_from_settings, get_logger
 
 
 @asynccontextmanager
@@ -24,10 +25,34 @@ async def lifespan(app: FastAPI):
     """
     # Startup
     settings = get_settings()
+    
+    # Initialize logging system
+    init_logging_from_settings()
+    logger = get_logger(__name__)
+    logger.info("🚀 应用启动中...")
+    
     init_db(settings)
+    logger.info("✅ 数据库初始化完成")
+    
+    # Seed achievements on startup
+    try:
+        from app.database import get_db_session
+        from app.services.achievement_service import seed_achievements
+        logger.info("🌱 开始初始化成就数据...")
+        async with await get_db_session() as session:
+            await seed_achievements(session)
+        logger.info("✅ 成就数据初始化完成")
+    except Exception as e:
+        # Log but don't fail startup if seeding fails
+        logger.warning(f"⚠️ 成就数据初始化失败: {e}", exc_info=True)
+    
+    logger.info("🎉 应用启动完成")
     yield
+    
     # Shutdown
+    logger.info("🛑 应用关闭中...")
     await close_db()
+    logger.info("✅ 数据库连接已关闭")
 
 
 def create_app() -> FastAPI:
@@ -51,8 +76,9 @@ def create_app() -> FastAPI:
             "http://127.0.0.1:3001",
         ],
         allow_credentials=True,
-        allow_methods=["*"],  # Allow all HTTP methods
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],  # Explicitly allow OPTIONS
         allow_headers=["*"],  # Allow all headers
+        expose_headers=["*"],
     )
 
     @app.get("/", tags=["info"], response_class=HTMLResponse)
@@ -100,9 +126,9 @@ def create_app() -> FastAPI:
             html_content = """
             <!DOCTYPE html>
             <html>
-            <head><title>TrailSaga API</title></head>
+            <head><title>TrailSaga – Hogwarts Expedition Series API</title></head>
             <body>
-                <h1>TrailSaga Backend API</h1>
+                <h1>TrailSaga – Hogwarts Expedition Series Backend API</h1>
                 <p>Template file not found. Please check templates/dashboard.html</p>
             </body>
             </html>
@@ -120,19 +146,6 @@ def create_app() -> FastAPI:
         html_content = html_content.replace("{{ database.status }}", "✅ Connected")
         html_content = html_content.replace("{{ llm.service }}", "Ollama")
         html_content = html_content.replace("{{ llm.model }}", settings.ollama_model)
-        
-        # Replace features list
-        features = [
-            "🎯 User profile management",
-            "🗺️ Route recommendations (Content-Based Filtering)",
-            "✨ AI story generation (Llama3.1:8b)",
-            "📈 XP and leveling system",
-            "🏆 Quest and achievement system"
-        ]
-        # Find and replace the features loop
-        features_pattern = r'{%\s*for\s+feature\s+in\s+features\s*%}.*?{%\s*endfor\s*%}'
-        features_html = "\n                    ".join([f"<li>{feature}</li>" for feature in features])
-        html_content = re.sub(features_pattern, features_html, html_content, flags=re.DOTALL)
         
         return HTMLResponse(content=html_content)
 
@@ -176,6 +189,9 @@ def create_app() -> FastAPI:
 
     app.include_router(profiles.router, prefix="/api")
     app.include_router(routes.router, prefix="/api")
+    app.include_router(souvenirs.router, prefix="/api")
+    app.include_router(achievements.router, prefix="/api")
+    app.include_router(logs.router, prefix="/api")
 
     return app
 

@@ -1,4 +1,4 @@
-# **产品需求文档 (PRD): TrailSaga**
+# **产品需求文档 (PRD): TrailSaga – Hogwarts Expedition Series**
 
 版本: 1.4 (XP 可解锁特殊路线 & 路线模拟地图)  
 日期: 2025 年 11 月 15 日  
@@ -9,7 +9,7 @@
 
 ### **1.1. 产品愿景**
 
-TrailSaga 旨在打造一个“游戏化的户外路线推荐系统”原型 (Gamified Tourism Recommender)。我们不仅仅是推荐路线，更是将每一次户外探索（如 City Walk, Hiking, Trail Running）转变为一场个性化、循序渐进的冒险故事。
+TrailSaga – Hogwarts Expedition Series 旨在打造一个“游戏化的户外路线推荐系统”原型 (Gamified Tourism Recommender)。我们不仅仅是推荐路线，更是将每一次户外探索（如 City Walk, Hiking, Trail Running）转变为一场个性化、循序渐进的冒险故事。
 
 ### **1.2. 项目目标 (Prototype)**
 
@@ -49,7 +49,7 @@ TrailSaga 旨在打造一个“游戏化的户外路线推荐系统”原型 (Ga
 
 ### **模块三：游戏化与成长体系 (Gamification & Progression)**
 
-这是 TrailSaga 的核心特色模块。
+这是 TrailSaga – Hogwarts Expedition Series 的核心特色模块。
 
 - **XP & 徽章 (XP & Badges)**
 

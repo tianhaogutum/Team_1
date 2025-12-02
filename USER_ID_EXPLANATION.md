@@ -13,7 +13,7 @@
 
 ### 1. 用户填写问卷
 ```
-用户访问网站 → 点击 "BEGIN YOUR SAGA" → 填写问卷
+用户访问网站 → 点击 "BEGIN YOUR SAGA" → 填写 TrailSaga – Hogwarts Expedition Series 的问卷
 ```
 
 ### 2. 前端发送请求

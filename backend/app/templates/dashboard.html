@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TrailSaga Backend Dashboard</title>
+    <title>TrailSaga – Hogwarts Expedition Series Backend Dashboard</title>
     <style>
         * {
             margin: 0;
@@ -137,16 +137,6 @@
             color: #764ba2;
         }
 
-        .feature-list {
-            list-style: none;
-        }
-
-        .feature-list li {
-            padding: 12px 0;
-            font-size: 1.05em;
-            color: #555;
-        }
-
         .badge {
             display: inline-block;
             padding: 4px 10px;
@@ -269,7 +259,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>⛰️ TrailSaga Backend API</h1>
+            <h1>⛰️ TrailSaga – Hogwarts Expedition Series Backend API</h1>
             <div class="version">Version {{ version }}</div>
             <div class="status-badge status-operational">{{ status }}</div>
             <p style="margin-top: 15px; color: #666;">{{ description }}</p>
@@ -344,15 +334,6 @@
                 </ul>
             </div>
 
-            <!-- Features Card -->
-            <div class="card">
-                <h2>✨ Features</h2>
-                <ul class="feature-list">
-                    {% for feature in features %}
-                    <li>{{ feature }}</li>
-                    {% endfor %}
-                </ul>
-            </div>
         </div>
 
         <!-- LLM Output Card -->
@@ -364,7 +345,7 @@
         </div>
 
         <div class="footer">
-            <p>TrailSaga Backend API Dashboard | Real-time statistics & LLM monitoring</p>
+            <p>TrailSaga – Hogwarts Expedition Series Backend API Dashboard | Real-time statistics & LLM monitoring</p>
         </div>
     </div>
 

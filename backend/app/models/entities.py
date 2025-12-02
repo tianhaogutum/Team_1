@@ -36,6 +36,11 @@ class DemoProfile(Base):
         back_populates="demo_profile",
         cascade="all, delete-orphan",
     )
+    achievements: Mapped[List["ProfileAchievement"]] = relationship(
+        "ProfileAchievement",
+        back_populates="demo_profile",
+        cascade="all, delete-orphan",
+    )
 
     def __repr__(self) -> str:  # pragma: no cover - debugging helper
         return f"<DemoProfile id={self.id} level={self.level} total_xp={self.total_xp}>"
@@ -104,7 +109,6 @@ class Breakpoint(Base):
     latitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     longitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     main_quest_snippet: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    side_plot_snippet: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     route: Mapped["Route"] = relationship("Route", back_populates="breakpoints")
     mini_quests: Mapped[List["MiniQuest"]] = relationship(
@@ -163,6 +167,7 @@ class Souvenir(Base):
     total_xp_gained: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
     genai_summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     xp_breakdown_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    pixel_image_svg: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # LLM-generated pixel art SVG
 
     demo_profile: Mapped["DemoProfile"] = relationship("DemoProfile", back_populates="souvenirs")
     route: Mapped["Route"] = relationship("Route", back_populates="souvenirs")
@@ -194,5 +199,59 @@ class ProfileFeedback(Base):
 
     def __repr__(self) -> str:  # pragma: no cover - debugging helper
         return f"<ProfileFeedback id={self.id} reason={self.reason!r}>"
+
+
+class Achievement(Base):
+    """
+    Achievement definitions for gamification.
+    """
+
+    __tablename__ = "achievements"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    achievement_key: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    icon: Mapped[str] = mapped_column(String(10), nullable=False)
+    condition_type: Mapped[str] = mapped_column(String(20), nullable=False)  # route_count, route_type, level, xp, distance
+    condition_value: Mapped[str] = mapped_column(Text, nullable=False)  # JSON string
+
+    profile_achievements: Mapped[List["ProfileAchievement"]] = relationship(
+        "ProfileAchievement",
+        back_populates="achievement",
+        cascade="all, delete-orphan",
+    )
+
+    def __repr__(self) -> str:  # pragma: no cover - debugging helper
+        return f"<Achievement id={self.id} key={self.achievement_key!r}>"
+
+
+class ProfileAchievement(Base):
+    """
+    User achievement unlock records.
+    """
+
+    __tablename__ = "profile_achievements"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    demo_profile_id: Mapped[int] = mapped_column(
+        ForeignKey("demo_profiles.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    achievement_id: Mapped[int] = mapped_column(
+        ForeignKey("achievements.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    unlocked_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    demo_profile: Mapped["DemoProfile"] = relationship("DemoProfile", back_populates="achievements")
+    achievement: Mapped["Achievement"] = relationship("Achievement", back_populates="profile_achievements")
+
+    def __repr__(self) -> str:  # pragma: no cover - debugging helper
+        return f"<ProfileAchievement id={self.id} profile_id={self.demo_profile_id} achievement_id={self.achievement_id}>"
 
 

@@ -44,6 +44,28 @@ class Settings(BaseSettings):
         description="Timeout in seconds for Ollama API calls (increased for batch story generation)",
     )
 
+    # Logging configuration
+    log_level: str = Field(
+        default="INFO",
+        env="LOG_LEVEL",
+        description="Logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL",
+    )
+    log_enable_file: bool = Field(
+        default=True,
+        env="LOG_ENABLE_FILE",
+        description="Enable file logging",
+    )
+    log_enable_console: bool = Field(
+        default=True,
+        env="LOG_ENABLE_CONSOLE",
+        description="Enable console logging",
+    )
+    log_detailed_format: bool = Field(
+        default=True,
+        env="LOG_DETAILED_FORMAT",
+        description="Use detailed log format with function names and line numbers",
+    )
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

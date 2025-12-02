@@ -1,9 +1,11 @@
 /**
- * API Client for TrailSaga backend
+ * API Client for TrailSaga – Hogwarts Expedition Series backend
  * Provides a centralized way to make API requests with error handling
  *
  * See api-types.ts for TypeScript type definitions that match the backend schemas
  */
+
+import { logger } from './logger';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -19,10 +21,7 @@ class ApiClient {
 
   constructor() {
     this.baseURL = API_BASE_URL;
-    // Debug: Log the API base URL in development
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔗 API Client initialized with base URL:', this.baseURL);
-    }
+    logger.info('API Client 初始化', { baseURL: this.baseURL }, 'ApiClient', 'INIT');
   }
 
   /**
@@ -58,9 +57,12 @@ class ApiClient {
    */
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    timeoutMs: number = 60000  // Default 60 seconds for all requests
   ): Promise<T> {
     const url = this.buildUrl(endpoint);
+    const method = options.method || 'GET';
+    const startTime = performance.now();
 
     // Get profile ID for authenticated requests
     const profileId = this.getProfileId();
@@ -76,9 +78,19 @@ class ApiClient {
       headers["X-Profile-Id"] = profileId;
     }
 
-    // Create AbortController for timeout (30 seconds for GenAI calls)
+    // Log request
+    let requestData: any = undefined;
+    try {
+      requestData = options.body ? JSON.parse(options.body as string) : undefined;
+    } catch (e) {
+      requestData = options.body;
+    }
+    logger.logApiRequest(method, url, { data: requestData, profileId }, 'ApiClient');
+
+    // Create AbortController for timeout
+    // Use longer timeout for story generation (60 seconds)
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
       const response = await fetch(url, {
@@ -88,41 +100,76 @@ class ApiClient {
       });
       
       clearTimeout(timeoutId);
+      
+      const duration = performance.now() - startTime;
 
-      // Handle non-JSON responses
+      // Handle non-OK responses first
+      if (!response.ok) {
+        // Try to parse as JSON for error details
+        const contentType = response.headers.get("content-type");
+        let errorData: any = null;
+        
+        if (contentType?.includes("application/json")) {
+          try {
+            errorData = await response.json();
+          } catch (e) {
+            // If JSON parsing fails, use status text
+          }
+        } else {
+          // For non-JSON responses, read as text
+          try {
+            const text = await response.text();
+            errorData = { message: text };
+          } catch (e) {
+            // If reading fails, use status text
+          }
+        }
+        
+        // Log detailed error information
+        const errorInfo = {
+          status: response.status,
+          statusText: response.statusText,
+          errorData,
+          url,
+          method,
+        };
+        logger.logApiError(method, url, errorInfo, 'ApiClient');
+        
+        // Extract error message
+        const errorMessage = errorData?.detail || 
+                           errorData?.message || 
+                           errorData?.error ||
+                           `HTTP ${response.status}: ${response.statusText}`;
+        
+        throw new ApiError(
+          errorMessage,
+          response.status,
+          errorData
+        );
+      }
+
+      // Handle non-JSON responses for successful requests
       const contentType = response.headers.get("content-type");
       if (!contentType?.includes("application/json")) {
-        if (!response.ok) {
-          throw new ApiError(
-            `HTTP ${response.status}: ${response.statusText}`,
-            response.status
-          );
-        }
+        logger.logApiResponse(method, url, response.status, duration, { contentType }, 'ApiClient');
         return {} as T;
       }
 
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new ApiError(
-          data.detail ||
-            data.message ||
-            `HTTP ${response.status}: ${response.statusText}`,
-          response.status,
-          data
-        );
-      }
-
+      logger.logApiResponse(method, url, response.status, duration, { dataSize: JSON.stringify(data).length }, 'ApiClient');
       return data as T;
     } catch (error) {
       clearTimeout(timeoutId);
+      const duration = performance.now() - startTime;
       
       if (error instanceof ApiError) {
+        logger.logApiError(method, url, { status: error.status, duration }, 'ApiClient');
         throw error;
       }
 
       // Handle timeout/abort
       if (error instanceof Error && error.name === "AbortError") {
+        logger.logApiError(method, url, { error: 'timeout', duration, timeoutMs }, 'ApiClient');
         throw new ApiError(
           "Request timeout: The server took too long to respond. This might be due to AI generation taking longer than expected.",
           0
@@ -131,12 +178,31 @@ class ApiClient {
 
       // Network or other errors
       if (error instanceof TypeError && error.message === "Failed to fetch") {
+        logger.logApiError(method, url, { 
+          error: 'network', 
+          duration,
+          errorMessage: error.message,
+          errorName: error.name,
+          stack: error.stack
+        }, 'ApiClient');
         throw new ApiError(
           "Network error: Could not connect to the server. Please check if the backend is running on http://localhost:8000",
-          0
+          0,
+          { networkError: true, originalError: error.message }
         );
       }
 
+      // Log all error details
+      const errorDetails = {
+        error: 'unknown',
+        duration,
+        errorMessage: error instanceof Error ? error.message : 'Unknown',
+        errorName: error instanceof Error ? error.name : 'Unknown',
+        errorType: typeof error,
+        stack: error instanceof Error ? error.stack : undefined,
+        fullError: String(error)
+      };
+      logger.logApiError(method, url, errorDetails, 'ApiClient');
       throw new ApiError(
         error instanceof Error ? error.message : "Unknown error occurred",
         0,
@@ -148,11 +214,11 @@ class ApiClient {
   /**
    * GET request
    */
-  async get<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  async get<T>(endpoint: string, options?: RequestInit, timeoutMs?: number): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
       method: "GET",
-    });
+    }, timeoutMs);
   }
 
   /**
@@ -161,13 +227,14 @@ class ApiClient {
   async post<T>(
     endpoint: string,
     data?: unknown,
-    options?: RequestInit
+    options?: RequestInit,
+    timeoutMs?: number
   ): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
       method: "POST",
       body: data ? JSON.stringify(data) : undefined,
-    });
+    }, timeoutMs);
   }
 
   /**
@@ -209,6 +276,103 @@ class ApiClient {
       body: data ? JSON.stringify(data) : undefined,
     });
   }
+
+  /**
+   * Create a souvenir by completing a route
+   */
+  async createSouvenir(
+    profileId: number,
+    routeId: number,
+    completedQuestIds: number[]
+  ): Promise<RouteCompleteResponse> {
+    return this.post<RouteCompleteResponse>(
+      `api/profiles/${profileId}/souvenirs`,
+      {
+        route_id: routeId,
+        completed_quest_ids: completedQuestIds,
+      }
+    );
+  }
+
+  /**
+   * Get all souvenirs for a profile
+   */
+  async getSouvenirs(
+    profileId: number,
+    options?: {
+      limit?: number;
+      offset?: number;
+      sort?: "newest" | "oldest" | "xp_high" | "xp_low";
+    }
+  ): Promise<SouvenirListResponse> {
+    const params = new URLSearchParams();
+    if (options?.limit) params.append("limit", String(options.limit));
+    if (options?.offset) params.append("offset", String(options.offset));
+    if (options?.sort) params.append("sort", options.sort);
+
+    const queryString = params.toString();
+    const endpoint = `api/profiles/${profileId}/souvenirs${queryString ? `?${queryString}` : ""}`;
+    return this.get<SouvenirListResponse>(endpoint);
+  }
+
+  /**
+   * Get a single souvenir by ID
+   */
+  async getSouvenir(
+    profileId: number,
+    souvenirId: number
+  ): Promise<ApiSouvenir> {
+    return this.get<ApiSouvenir>(
+      `api/profiles/${profileId}/souvenirs/${souvenirId}`
+    );
+  }
+
+  /**
+   * Get aggregated statistics for a profile
+   */
+  async getProfileStatistics(profileId: number): Promise<ApiProfileStatistics> {
+    return this.get<ApiProfileStatistics>(
+      `api/profiles/${profileId}/statistics`
+    );
+  }
+
+  /**
+   * Submit negative feedback for a route recommendation
+   */
+  async submitFeedback(
+    profileId: number,
+    routeId: number,
+    reason: string
+  ): Promise<FeedbackResponse> {
+    return this.post<FeedbackResponse>(
+      `api/profiles/${profileId}/feedback`,
+      {
+        route_id: routeId,
+        reason: reason,
+      }
+    );
+  }
+
+  /**
+   * Get all achievement definitions
+   */
+  async getAchievements(): Promise<ApiAchievement[]> {
+    return this.get<ApiAchievement[]>("api/achievements");
+  }
+
+  /**
+   * Get user's achievements with unlock status
+   */
+  async getProfileAchievements(profileId: number): Promise<ApiProfileAchievement[]> {
+    return this.get<ApiProfileAchievement[]>(`api/achievements/profiles/${profileId}`);
+  }
+
+  /**
+   * Check and unlock achievements for a user
+   */
+  async checkAchievements(profileId: number): Promise<ApiAchievement[]> {
+    return this.post<ApiAchievement[]>(`api/achievements/profiles/${profileId}/check`);
+  }
 }
 
 // Export singleton instance
@@ -216,3 +380,12 @@ export const apiClient = new ApiClient();
 
 // Re-export API types for convenience
 export * from "./api-types";
+import type {
+  FeedbackResponse,
+  RouteCompleteResponse,
+  SouvenirListResponse,
+  ApiSouvenir,
+  ApiAchievement,
+  ApiProfileAchievement,
+  ApiProfileStatistics,
+} from "./api-types";
