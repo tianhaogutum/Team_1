@@ -308,6 +308,81 @@ async def delete_profile(
     return None
 
 
+@router.delete("", status_code=status.HTTP_200_OK)
+async def delete_all_profiles(
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    """
+    Delete all user profiles from the database (for testing/reset purposes).
+    
+    This endpoint will delete all profiles and cascade delete:
+    - All souvenirs
+    - All feedback entries
+    - All profile achievements
+    
+    Parameters
+    ----------
+    db : AsyncSession
+        Database session
+    
+    Returns
+    -------
+    dict
+        Number of profiles deleted
+    """
+    import time
+    start_time = time.time()
+    
+    logger.info("=" * 80)
+    logger.info("🗑️ Deleting all user profiles (RESET operation)")
+    
+    # Query all profiles
+    result = await db.execute(select(DemoProfile))
+    profiles = result.scalars().all()
+    
+    profile_count = len(profiles)
+    
+    if profile_count == 0:
+        logger.info("✅ No profiles found in database")
+        logger.info("=" * 80)
+        return {"deleted_count": 0, "message": "No profiles found to delete"}
+    
+    logger.info(f"Found {profile_count} profile(s) to delete")
+    
+    # Delete all profiles (cascade will handle related data)
+    for profile in profiles:
+        logger.debug(f"Deleting profile ID: {profile.id}")
+        await db.delete(profile)
+    
+    await db.commit()
+    
+    duration_ms = (time.time() - start_time) * 1000
+    
+    log_business_logic(
+        logger,
+        "delete_all",
+        "user profiles",
+        count=profile_count
+    )
+    
+    log_request(
+        logger,
+        "DELETE",
+        "/api/profiles",
+        status_code=200,
+        duration_ms=duration_ms
+    )
+    
+    logger.info(f"✅ Successfully deleted {profile_count} profile(s) and all related data")
+    logger.info(f"Duration: {duration_ms:.2f}ms")
+    logger.info("=" * 80)
+    
+    return {
+        "deleted_count": profile_count,
+        "message": f"Successfully deleted {profile_count} profile(s) and all related data"
+    }
+
+
 @router.post("/{profile_id}/feedback", response_model=FeedbackResponse, status_code=status.HTTP_201_CREATED)
 async def submit_feedback(
     profile_id: int,
@@ -364,6 +439,52 @@ async def submit_feedback(
     db.add(new_feedback)
     await db.commit()
     await db.refresh(new_feedback)
+    
+    # Update user_vector_json to reflect feedback adjustments
+    # This ensures the frontend "Your Preferences" display is up-to-date
+    try:
+        from app.services.recommendation_service import (
+            adjust_user_vector_with_feedback,
+            extract_route_vector
+        )
+        
+        # Get all feedback for this profile
+        feedback_query = select(ProfileFeedback).where(
+            ProfileFeedback.demo_profile_id == profile_id
+        )
+        feedback_result = await db.execute(feedback_query)
+        all_feedback = list(feedback_result.scalars().all())
+        
+        # Parse current user_vector
+        if profile.user_vector_json:
+            original_vector = json.loads(profile.user_vector_json)
+            
+            # Build route_vectors dict (only need the current route)
+            route_vector = extract_route_vector(route)
+            route_vectors = {route.id: route_vector}
+            
+            # Also get other routes that have feedback
+            for fb in all_feedback:
+                if fb.route_id != route.id and fb.route_id not in route_vectors:
+                    other_route = await db.get(Route, fb.route_id)
+                    if other_route:
+                        route_vectors[fb.route_id] = extract_route_vector(other_route)
+            
+            # Apply feedback adjustments
+            adjusted_vector = adjust_user_vector_with_feedback(
+                original_vector,
+                all_feedback,
+                route_vectors
+            )
+            
+            # Update profile with adjusted vector
+            profile.user_vector_json = json.dumps(adjusted_vector, ensure_ascii=False)
+            await db.commit()
+            
+            logger.debug(f"✅ Updated user_vector after feedback: {adjusted_vector}")
+    except Exception as e:
+        logger.warning(f"⚠️ Failed to update user_vector after feedback: {e}")
+        # Don't fail the feedback submission if vector update fails
     
     return FeedbackResponse.model_validate(new_feedback)
 

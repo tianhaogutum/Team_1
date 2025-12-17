@@ -360,20 +360,40 @@ def adjust_user_vector_with_feedback(
         
         # Adjust preferences based on feedback reason
         if reason == "too-hard":
-            # Lower maximum difficulty preference
-            adjusted_vector["difficulty_range"][1] = max(
-                0,
-                adjusted_vector["difficulty_range"][1] - 0.5 * weight
-            )
+            # Lower difficulty preference (shift entire range downward)
+            # Both min and max decrease to maintain range width of 1.0
+            # This gradually transitions user to easier difficulty levels
+            new_min = max(0, adjusted_vector["difficulty_range"][0] - 0.5 * weight)
+            new_max = max(0, adjusted_vector["difficulty_range"][1] - 0.5 * weight)
+            
+            # Edge case protection: Maintain range width of 1.0
+            # If min reaches 0, ensure max is at least 1.0
+            if new_min == 0 and new_max < 1.0:
+                new_max = 1.0  # Keep range width = 1.0
+            
+            adjusted_vector["difficulty_range"][0] = new_min
+            adjusted_vector["difficulty_range"][1] = new_max
         elif reason == "too-easy":
-            # Raise minimum difficulty preference
-            adjusted_vector["difficulty_range"][0] = min(
-                3,
-                adjusted_vector["difficulty_range"][0] + 0.5 * weight
-            )
+            # Raise difficulty preference (shift entire range upward)
+            # Both min and max increase to maintain range width of 1.0
+            # This gradually transitions user from beginner → intermediate → advanced
+            new_min = min(3, adjusted_vector["difficulty_range"][0] + 0.5 * weight)
+            new_max = min(3, adjusted_vector["difficulty_range"][1] + 0.5 * weight)
+            
+            # Edge case protection: Maintain range width of 1.0
+            # If max reaches 3, ensure min is at least 2.0
+            if new_max == 3 and new_min > 2.0:
+                new_min = 2.0  # Keep range width = 1.0
+            
+            adjusted_vector["difficulty_range"][0] = new_min
+            adjusted_vector["difficulty_range"][1] = new_max
         elif reason == "too-far":
             # Reduce maximum distance preference
-            adjusted_vector["max_distance_km"] *= (1 - 0.1 * weight)
+            # Ensure it doesn't go below minimum distance
+            new_max = adjusted_vector["max_distance_km"] * (1 - 0.1 * weight)
+            # Keep a reasonable gap between min and max (at least 2km)
+            min_allowed_max = adjusted_vector.get("min_distance_km", 0.0) + 2.0
+            adjusted_vector["max_distance_km"] = max(new_max, min_allowed_max)
         elif reason == "not-interested":
             # Remove route tags from preferred tags
             route_tags = route_vector.get("tags", [])

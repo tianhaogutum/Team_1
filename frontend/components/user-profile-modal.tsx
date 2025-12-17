@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { UserProfile, mockRoutes, Route } from '@/lib/mock-data';
-import { X, Trophy, Target, Mountain, MapPin, TrendingUp, Sparkles, Award, Calendar, RotateCcw, Loader2 } from 'lucide-react';
+import { X, Trophy, Target, Mountain, MapPin, TrendingUp, Sparkles, Award, Calendar, RotateCcw, Loader2, Sliders } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api-client';
@@ -38,6 +38,15 @@ export function UserProfileModal({ userProfile, onClose }: UserProfileModalProps
   const [stats, setStats] = useState<ApiProfileStatistics | null>(null);
   const [isLoadingStats, setIsLoadingStats] = useState(false);
   const [statsError, setStatsError] = useState<string | null>(null);
+  const [userPreferences, setUserPreferences] = useState<{
+    difficulty_range?: [number, number];
+    max_distance_km?: number;
+    min_distance_km?: number;
+    preferred_tags?: string[];
+    fitness_level?: string;
+    narrative_prompt_style?: string;
+  } | null>(null);
+  const [isLoadingPreferences, setIsLoadingPreferences] = useState(false);
 
   const xpProgress = (userProfile.xp % 300) / 300 * 100;
   const fallbackTotalDistance = completedRoutes.reduce((sum, r) => sum + r.route.distance, 0);
@@ -107,25 +116,73 @@ export function UserProfileModal({ userProfile, onClose }: UserProfileModalProps
 
   const handleResetProfile = async () => {
     try {
-      // Try to delete profile from backend if we have a backend profile ID
-      const profileId = userProfile.id;
-      if (profileId && !isNaN(parseInt(profileId, 10))) {
-        const backendProfileId = parseInt(profileId, 10);
-        try {
-          await apiClient.delete(`api/profiles/${backendProfileId}`);
-        } catch (error) {
-          // If deletion fails, continue with local reset anyway
-          console.warn('Failed to delete profile from backend:', error);
-        }
+      console.log('[Reset] Starting reset - will delete ALL user profiles from database');
+      
+      // Delete ALL profiles from backend (not just current user)
+      try {
+        const response = await apiClient.delete<{ deleted_count: number; message: string }>(`api/profiles`);
+        console.log('[Reset] Successfully deleted all profiles:', response);
+      } catch (error) {
+        // If deletion fails, log error but continue with local reset
+        console.error('[Reset] Failed to delete profiles from backend:', error);
       }
     } catch (error) {
-      console.warn('Error during profile deletion:', error);
+      console.error('[Reset] Error during reset operation:', error);
     } finally {
-      // Always clear localStorage and redirect
+      // Always clear localStorage and redirect to start fresh
+      console.log('[Reset] Clearing localStorage and redirecting to home');
       localStorage.clear();
       window.location.href = '/';
     }
   };
+
+  // Load user preferences from backend
+  useEffect(() => {
+    const loadUserPreferences = async () => {
+      const profileId = userProfile.id;
+      console.log('[UserPreferences] Starting to load preferences for profile:', profileId);
+      
+      if (!profileId) {
+        console.log('[UserPreferences] No profile ID, setting preferences to null');
+        setUserPreferences(null);
+        return;
+      }
+
+      const profileIdNum = parseInt(profileId, 10);
+      if (isNaN(profileIdNum)) {
+        console.log('[UserPreferences] Invalid profile ID (not a number):', profileId);
+        setUserPreferences(null);
+        return;
+      }
+
+      setIsLoadingPreferences(true);
+      try {
+        console.log('[UserPreferences] Fetching profile from API:', profileIdNum);
+        const profileResponse = await apiClient.getProfile(profileIdNum);
+        console.log('[UserPreferences] Profile response received:', {
+          hasUserVectorJson: !!profileResponse.user_vector_json,
+          userVectorJsonLength: profileResponse.user_vector_json?.length || 0,
+          userVectorJsonPreview: profileResponse.user_vector_json?.substring(0, 100)
+        });
+        
+        if (profileResponse.user_vector_json) {
+          const userVector = JSON.parse(profileResponse.user_vector_json);
+          console.log('[UserPreferences] Parsed user vector:', userVector);
+          setUserPreferences(userVector);
+        } else {
+          console.log('[UserPreferences] No user_vector_json in response, setting to null');
+          setUserPreferences(null);
+        }
+      } catch (error) {
+        console.error('[UserPreferences] Failed to load user preferences:', error);
+        setUserPreferences(null);
+      } finally {
+        setIsLoadingPreferences(false);
+      }
+    };
+
+    loadUserPreferences();
+  }, [userProfile.id]);
 
   // Load statistics from backend
   useEffect(() => {
@@ -367,6 +424,77 @@ export function UserProfileModal({ userProfile, onClose }: UserProfileModalProps
                 </div>
               </Card>
 
+              {/* User Preferences */}
+              <Card className="p-6 border-2 border-border">
+                <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+                  <Sliders className="w-5 h-5 text-primary" />
+                  Your Preferences
+                </h3>
+                {isLoadingPreferences ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                    <span className="ml-2 text-sm text-muted-foreground">Loading preferences...</span>
+                  </div>
+                ) : userPreferences ? (
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {/* Difficulty Range */}
+                    {userPreferences.difficulty_range && (
+                      <div className="p-4 bg-muted/50 rounded-lg">
+                        <p className="text-xs text-muted-foreground mb-1">Difficulty Range</p>
+                        <p className="text-lg font-bold text-foreground">
+                          {userPreferences.difficulty_range[0]} - {userPreferences.difficulty_range[1]}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {userPreferences.difficulty_range[0] === 0 && userPreferences.difficulty_range[1] === 1 && 'Beginner friendly'}
+                          {userPreferences.difficulty_range[0] === 1 && userPreferences.difficulty_range[1] === 2 && 'Intermediate level'}
+                          {userPreferences.difficulty_range[0] === 2 && userPreferences.difficulty_range[1] === 3 && 'Advanced challenges'}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Distance Range */}
+                    {(userPreferences.min_distance_km !== undefined || userPreferences.max_distance_km !== undefined) && (
+                      <div className="p-4 bg-muted/50 rounded-lg">
+                        <p className="text-xs text-muted-foreground mb-1">Distance Range</p>
+                        <p className="text-lg font-bold text-foreground">
+                          {userPreferences.min_distance_km?.toFixed(1) || 0} - {userPreferences.max_distance_km?.toFixed(1) || 100} km
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">Preferred route length</p>
+                      </div>
+                    )}
+
+                    {/* Fitness Level */}
+                    {userPreferences.fitness_level && (
+                      <div className="p-4 bg-muted/50 rounded-lg">
+                        <p className="text-xs text-muted-foreground mb-1">Fitness Level</p>
+                        <p className="text-lg font-bold text-foreground capitalize">
+                          {userPreferences.fitness_level}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">Your training level</p>
+                      </div>
+                    )}
+
+                    {/* Preferred Tags */}
+                    {userPreferences.preferred_tags && userPreferences.preferred_tags.length > 0 && (
+                      <div className="p-4 bg-muted/50 rounded-lg">
+                        <p className="text-xs text-muted-foreground mb-2">Preferred Interests</p>
+                        <div className="flex flex-wrap gap-2">
+                          {userPreferences.preferred_tags.map((tag, index) => (
+                            <Badge key={index} variant="secondary" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No preference data available
+                  </p>
+                )}
+              </Card>
+
               {/* Activity Breakdown */}
               <Card className="p-6 border-2 border-border">
                 <h3 className="text-lg font-bold text-foreground mb-4">Activity Breakdown</h3>
@@ -507,7 +635,7 @@ export function UserProfileModal({ userProfile, onClose }: UserProfileModalProps
             </TabsContent>
           </Tabs>
 
-          {/* Reset Profile Section */}
+          {/* Reset Database Section */}
           <div className="mt-8 pt-6 border-t-2 border-border">
             {!showResetConfirm ? (
               <Button
@@ -516,12 +644,15 @@ export function UserProfileModal({ userProfile, onClose }: UserProfileModalProps
                 onClick={() => setShowResetConfirm(true)}
               >
                 <RotateCcw className="w-4 h-4 mr-2" />
-                Reset Profile
+                Reset Database (Delete ALL Users)
               </Button>
             ) : (
               <Card className="p-4 border-2 border-destructive/50 bg-destructive/5">
-                <p className="text-sm text-foreground mb-4 font-semibold">
-                  Are you sure? This will delete all your progress and return you to the welcome screen.
+                <p className="text-sm text-foreground mb-2 font-semibold text-destructive">
+                  ⚠️ WARNING: Complete Database Reset
+                </p>
+                <p className="text-sm text-foreground mb-4">
+                  This will delete <strong>ALL user profiles</strong> from the database, including all souvenirs, achievements, and progress. This action cannot be undone.
                 </p>
                 <div className="flex gap-3">
                   <Button
@@ -529,7 +660,7 @@ export function UserProfileModal({ userProfile, onClose }: UserProfileModalProps
                     className="flex-1"
                     onClick={handleResetProfile}
                   >
-                    Yes, Reset Everything
+                    Yes, Delete Everything
                   </Button>
                   <Button
                     variant="outline"

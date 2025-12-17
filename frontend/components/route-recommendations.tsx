@@ -375,6 +375,12 @@ export function RouteRecommendations({
                     } else if (parsed.type === "photo") {
                       questType = "photo";
                       questDescription = parsed.description;
+                    } else if (parsed.type === "observation") {
+                      questType = "observation";
+                      questDescription = parsed.description;
+                    } else if (parsed.description) {
+                      // Default: use parsed description if available
+                      questDescription = parsed.description;
                     }
                   } catch (e) {
                     // Not JSON, use as-is
@@ -804,6 +810,7 @@ export function RouteRecommendations({
                   <option value={30}>30</option>
                   <option value={50}>50</option>
                   <option value={100}>100</option>
+                  <option value={999}>All</option>
                 </select>
               </div>
               <p className="text-sm text-muted-foreground">

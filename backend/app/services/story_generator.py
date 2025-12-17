@@ -62,41 +62,50 @@ def _generate_harry_potter_skeleton(route_context: dict) -> dict:
     location = route_context.get('location', 'a mysterious place')
     
     # Generate title
-    title = f"The Magical Quest of {route_name}"
+    title = f"The Historical Mysteries of {route_name}"
     
     # Generate outline
-    outline = f"A young wizard embarks on a dangerous quest to uncover ancient magical secrets hidden within {route_name}, facing challenges and mysteries at every turn."
+    outline = f"A young wizard embarks on an educational quest to discover how Muggle history and magical protection are intertwined at {route_name}, learning that understanding the past is key to preserving the future."
     
     # Generate prologue
-    prologue = f"""You sit in the Great Hall of Hogwarts, the morning post arriving with a flurry of owls. Among the usual letters and packages, a peculiar envelope catches your eye. It's sealed with dark green wax bearing the symbol of a wand crossed with a key.
+    prologue = f"""You sit in the Hogwarts library, studying for your History of Magic exam, when Professor McGonagall approaches your table. She's holding an ancient leather-bound journal and a sealed letter bearing the symbol of the Order of the Phoenix.
 
-Your hands tremble slightly as you break the seal. The letter is written in elegant, looping script:
+"I have a special assignment for you," she says, her expression serious but kind. "The Order has discovered that several historically significant Muggle locations are under threat from dark wizards who seek to sever the magical protections that have been woven into these places over centuries."
 
-"Dear {route_context.get('name', 'Student')},
+She hands you the journal. "This is a Historical Seeker's Journal. It will reveal hidden historical knowledge at each location you visit. Your mission is not one of combat, but of understanding. You must journey to {route_name} in {location} and learn the true history of each significant point along the route."
 
-You have been selected for a mission of utmost importance. Ancient magical artifacts have been discovered in {location}, specifically at a location known as {route_name}. These artifacts hold power that could either protect or endanger the wizarding world.
+"But why me, Professor?" you ask.
 
-You must journey to this place and uncover the secrets hidden there. Trust no one completely, and beware—dark forces may also be seeking these artifacts.
+"Because," she replies with a slight smile, "you've shown exceptional ability in understanding the connection between Muggle and magical worlds. This quest requires someone who can appreciate history—both magical and Muggle—and understand how they're intertwined."
 
-The journey begins at dawn tomorrow. Pack your wand, your courage, and your wits.
+She places the sealed letter on top of the journal. "The Order of Phoenix has identified specific locations along {route_name} where the boundary between historical significance and magical protection is strongest. At each location, you'll use this journal to uncover the true history. That knowledge itself will be your greatest tool."
 
-Yours in magic,
-The Order of the Phoenix"
+"Dark wizards seek to corrupt these places not by attacking them directly, but by severing their connection to history—erasing the memories and significance that give them magical protection. By learning and understanding the history, you strengthen those protections."
 
-Your heart races with excitement and apprehension. This is it—your chance to prove yourself, to become a true wizard of legend. As you fold the letter carefully, you notice a small map has been included, showing the route you must follow. Each marked point seems to pulse with magical energy.
+You accept the journal and letter, feeling the weight of responsibility. This isn't just about magic—it's about preserving the stories and memories that make places significant.
 
-Tomorrow, your adventure begins."""
+"Remember," Professor McGonagall adds as she turns to leave, "history is not just dates and facts. It's the accumulated emotions, experiences, and significance that humans attach to places. That emotional resonance creates magical energy. Understand the history, and you'll understand the magic."
+
+Your adventure begins not with a wand duel, but with an open mind and a willingness to learn."""
     
     # Generate epilogue
-    epilogue = f"""As you stand at the final location, the magical artifacts safely secured, you reflect on the incredible journey you've undertaken. The challenges you faced, the mysteries you solved, and the magic you witnessed have transformed you.
+    epilogue = f"""As you stand at the final location along {route_name}, the Historical Seeker's Journal glowing softly in your hands, you reflect on everything you've learned.
 
-The letter from the Order of Phoenix was just the beginning. Through {route_name}, you've discovered not just ancient artifacts, but also your own strength, courage, and the true meaning of being a wizard.
+This quest was unlike any other. You didn't battle dark wizards with spells—instead, you defeated them by understanding, by learning, by connecting with the deep history of each place you visited. Each location told you its story: the people who gathered there, the events that shaped it, the traditions that have been passed down through generations.
 
-You've learned that magic isn't just about spells and potions—it's about the connections between places, people, and history. The real world and the magical world are intertwined in ways you never imagined.
+You've discovered that the greatest magical protection doesn't come from powerful enchantments or ancient artifacts—it comes from human memory, from the significance that people attach to places, from the accumulated weight of history and emotion.
 
-As you prepare to return to Hogwarts, you know this adventure has changed you forever. You're no longer just a student; you're a true wizard, ready to face whatever challenges lie ahead.
+The dark wizards sought to sever these connections, to make these places "just locations" devoid of meaning. But by learning and understanding the true history, you've strengthened the magical protections that have guarded these places for centuries.
 
-The journey may be over, but your magical story has only just begun."""
+You've learned about {route_name} in ways that no textbook could teach. You've seen how Muggle history and magical guardianship are not separate things, but two perspectives on the same truth. You understand now why Hermione always insisted that "knowledge is power"—not because facts make you strong, but because understanding creates connection, and connection creates protection.
+
+As you prepare to return to Hogwarts, you know that you'll remember every story, every historical detail, every moment of significance you discovered. These aren't just facts for an exam—they're living memories that you now carry with you, adding your own layer of protection and understanding to these special places.
+
+Professor McGonagall was right: this quest required not combat skills but something far more valuable—the ability to listen, to learn, and to understand the deep connections between past and present, between Muggle and magical, between history and protection.
+
+Your Historical Seeker's Journal is now full of glowing entries, each one a testament to the places you've visited and the stories you've learned. The dark threat has been neutralized not by destruction, but by preservation—by ensuring that these histories continue to be known, remembered, and honored.
+
+Your quest is complete. You've proven that sometimes the most powerful magic is simply understanding and remembering the truth."""
     
     return {
         "title": title,
@@ -118,6 +127,7 @@ def _generate_harry_potter_chapter(
 ) -> str:
     """
     Generate a ~1000 word Harry Potter themed chapter for a breakpoint.
+    Focus on presenting historical context through storytelling.
     
     Args:
         chapter_num: Chapter number (0-indexed)
@@ -133,7 +143,7 @@ def _generate_harry_potter_chapter(
         Full chapter text (~1000 words for Wiesn, shorter for others)
     """
     # Base chapter structure
-    chapter_intro = f"""Chapter {chapter_num + 1}: The Mystery of {poi_name}
+    chapter_intro = f"""Chapter {chapter_num + 1}: The Secrets of {poi_name}
 
 """
     
@@ -143,106 +153,86 @@ def _generate_harry_potter_chapter(
             chapter_num, poi_name, poi_type, previous_chapter_summary, next_location_hint
         )
     
-    # For Wiesn route, generate detailed content with historical context
-    # Opening paragraph - arrival and atmosphere
+    # For Wiesn route, generate detailed content with historical context as the centerpiece
     if historical_context:
-        # Extract key historical facts for richer storytelling
-        opening = f"""You arrive at {poi_name}, and immediately you sense something extraordinary. The air itself seems to shimmer with residual magic, as if centuries of magical events have left their mark on this place. 
+        # Opening - Arrival and sensing the history
+        opening = f"""You arrive at {poi_name}, your magical compass guiding you to this precise location. {previous_chapter_summary if previous_chapter_summary else "The ancient map from the Order of Phoenix glows softly in your hand,"} revealing that this place holds secrets crucial to your quest.
 
-According to the historical records you've studied, {historical_context}. This knowledge makes the location even more significant. You can almost feel the weight of history pressing down on you, mingling with the magical energy that permeates the area. The Muggles who visit this place see only the surface—the celebrations, the architecture, the traditions. But you, as a wizard, can perceive the deeper magical currents that flow beneath.
+As you approach, your wand grows warm—a sign that powerful magic is woven into the very foundations of this location. But this is not the dark, foreboding magic you've been warned about. Instead, it feels like the magic of memory itself, as if the stones and air have absorbed centuries of human history and are now ready to share their stories.
 
-Your wand feels warm in your hand, reacting to the magical presence. You whisper "Lumos," and the tip of your wand glows brighter than usual, illuminating details that would be invisible to Muggles. The very stones beneath your feet seem to pulse with ancient power, and you realize that this location has been a nexus of magical energy for far longer than the Muggles have been celebrating here.
+You pull out the enchanted journal given to you by Professor McGonagall. "When you seek magical artifacts," she had told you, "you must first understand the Muggle history of the place. For our magical world and theirs are more intertwined than most realize. The truth lies in the intersection."
+
+Opening the journal, you find a page dedicated to {poi_name}, written in glowing ink that appears only when you're at the location itself. You read aloud, and as you do, the words seem to come alive:
 
 """
+
+        # Historical context as discovered knowledge - this is the core of the chapter
+        historical_discovery = f""""{historical_context}"
+
+As you finish reading, the air around you shimmers. The journal's magic creates ethereal images—like moving photographs but translucent, showing you glimpses of the past. You watch, mesmerized, as history unfolds before your eyes.
+
+You see the people who once walked here, the events that shaped this place, the traditions that have been passed down through generations. But through your wizard's sight, you also perceive something more: faint traces of magical influence woven throughout these historical moments. 
+
+The wizarding community has always been here, you realize, hidden in plain sight, subtly guiding and protecting, ensuring that these important historical moments could unfold as they were meant to. The Muggles built this place and created its history, but wizards were the silent guardians, preserving the magic that makes certain places special.
+
+You notice specific details in the ethereal visions that only a trained wizard would recognize: a subtle wand movement disguised as a gesture, a protective charm hidden in the architecture, enchantments woven into celebrations that Muggles experience as inexplicable feelings of joy and wonder.
+
+"Remarkable, isn't it?" a voice says behind you.
+
+"""
+
+        # The encounter and deeper historical revelation
+        encounter = f"""You turn to see an elderly witch approaching, wearing elegant traveling robes adorned with brass timepiece medallions. She introduces herself as Madam Tempus, a Historian of Magical-Muggle Convergence from the Department of Mysteries.
+
+"The Order of Phoenix sent word you'd be coming," she says kindly. "I've been the guardian of {poi_name} for forty years. Let me share what the journal cannot."
+
+She waves her wand, and the ethereal images grow clearer, more detailed. "You see," she explains, "this location isn't just historically significant to Muggles. It's a nexus point—a place where the boundary between our world and theirs grows thin, not because of dark magic, but because of collective human emotion and memory."
+
+Madam Tempus points to various elements of the location as she speaks. "Every celebration, every gathering, every moment of joy or solemnity that Muggles experience here creates ripples of magical energy. Over centuries, these ripples have accumulated, creating a reservoir of protective magic. This is what dark wizards seek to corrupt—not for the power itself, but to sever the connection between Muggle history and magical protection."
+
+She hands you a small crystalline artifact. "This is a Memory Stone. It has absorbed fragments of every significant moment at this location. To find the next piece of your quest, you must attune yourself to its resonance. Close your eyes, hold the stone, and let the history speak to you."
+
+"""
+
+        # The test - understanding and connecting with history
+        historical_challenge = f"""You follow her instructions, closing your eyes and focusing on the Memory Stone. Immediately, you're overwhelmed by sensations—voices, music, laughter, solemnity, celebration. Centuries of human experience flow through you.
+
+But you remember Professor Flitwick's lessons on magical meditation. You steady your breathing and instead of being swept away by the torrent of memories, you begin to understand them. You see how each historical event at {poi_name} contributed to the magical energy here. You understand why this place matters—not just to Muggles, but to the preservation of magical-Muggle harmony.
+
+The test becomes clear: you must identify the single most magically significant historical moment at this location. The Memory Stone pulses with different colored lights, each representing a different era, a different event.
+
+You think carefully about everything you've learned. The historical facts are clear in your mind: {historical_context[:200]}{"..." if len(historical_context) > 200 else ""}
+
+Drawing on both your knowledge of history and your magical intuition, you focus on the moment that resonates most strongly with magical energy. The Memory Stone flashes brilliant gold, confirming your understanding.
+
+"Well done," Madam Tempus says with approval. "You've grasped what many wizards never understand: that Muggle history isn't separate from magical history—they're two threads of the same tapestry. By understanding and respecting the Muggle history of this place, you've proven yourself worthy of the magical knowledge it guards."
+
+"""
+
+        # Resolution with forward momentum
+        resolution = f"""The Memory Stone transforms in your hand, becoming a compass that points steadily toward {next_location_hint if next_location_hint else "the next location"}. 
+
+"The path forward is revealed," Madam Tempus says. "But remember: each location you visit has its own story, its own convergence of Muggle history and magical significance. Honor both, and you'll succeed in your quest. The dark wizards seek to destroy these connections, to separate magic from human history. You must preserve them."
+
+She begins to fade, her duty at this location complete for now. "One more thing," she calls out as she disappears. "The history you've learned here isn't just facts—it's the foundation of understanding why these places must be protected. Carry that knowledge with you."
+
+You stand for a moment longer at {poi_name}, looking at it with new eyes. What once seemed like simply a historically significant place now reveals itself as so much more—a living testament to the intersection of human achievement and magical wonder.
+
+With renewed purpose, you consult your new compass and prepare to journey to {next_location_hint if next_location_hint else "your next destination"}. Each step of this quest deepens your understanding of how intertwined the magical and Muggle worlds truly are. And somewhere ahead lies the artifact that dark forces seek—an artifact whose true power lies not in magic alone, but in its connection to centuries of human history.
+
+Your adventure continues, guided by history and magic alike..."""
+
+        # Combine all parts with history at the center
+        full_chapter = chapter_intro + opening + historical_discovery + encounter + historical_challenge + resolution
+        
+        return full_chapter
+        
     else:
-        opening = f"""You arrive at {poi_name}, and immediately you sense something extraordinary. The air itself seems to shimmer with residual magic, as if centuries of magical events have left their mark on this place.
-
-Your wand feels warm in your hand, reacting to the magical presence. You whisper "Lumos," and the tip of your wand glows brighter than usual, illuminating details that would be invisible to Muggles.
-
-"""
-    
-    # Middle section - action and discovery (enhanced for Wiesn with historical context)
-    if historical_context:
-        middle = f"""{previous_chapter_summary if previous_chapter_summary else "Following the map from the Order of Phoenix,"} you carefully examine the area. Your training at Hogwarts has prepared you for this moment, but nothing could have prepared you for the depth of magical history embedded in this place.
-
-As you explore, you notice something peculiar. There's a pattern in the way the magical energy flows—it's not random, but deliberate, as if the very history of this location has been woven into a magical tapestry. The celebrations that Muggles see are merely the surface manifestation of something far deeper and more ancient.
-
-You pull out your wand and cast a revealing charm. "Revelio!" The spell reveals hidden magical markers, glowing runes that only appear to those with magical sight. They form a path, leading you deeper into the mystery of this location. The runes seem to tell a story that connects the Muggle history you've learned about with the hidden magical history that has been kept secret for generations.
-
-The historical significance of this place—{historical_context[:150]}...—takes on new meaning when viewed through magical eyes. You realize that the events that happened here in the Muggle world were not coincidences, but were influenced by the magical community working behind the scenes.
-
-The runes tell a story—ancient, powerful magic that has been dormant for years, waiting for the right moment, the right wizard, to awaken it. You realize that this isn't just a quest; it's a test. The Order of Phoenix wants to see if you're worthy of the power that lies hidden here, power that has been protected by generations of wizards who understood the importance of this location.
+        # Fallback for breakpoints without historical context
+        opening = f"""You arrive at {poi_name}, sensing magical energy in the air. Your quest continues, though without detailed historical records, you must rely on your magical intuition to uncover the secrets hidden here.
 
 """
-    else:
-        middle = f"""{previous_chapter_summary if previous_chapter_summary else "Following the map from the Order of Phoenix,"} you carefully examine the area. Your training at Hogwarts has prepared you for this moment. You know how to look for magical traces, how to sense hidden enchantments, and how to protect yourself from potential dangers.
-
-As you explore, you notice something peculiar. There's a pattern in the way the magical energy flows—it's not random, but deliberate. Someone, or something, has been here recently. The magical signature is fresh, which means you're not alone in this quest.
-
-You pull out your wand and cast a revealing charm. "Revelio!" The spell reveals hidden magical markers, glowing runes that only appear to those with magical sight. They form a path, leading you deeper into the mystery of this location.
-
-The runes tell a story—ancient, powerful magic that has been dormant for years, waiting for the right moment, the right wizard, to awaken it. You realize that this isn't just a quest; it's a test. The Order of Phoenix wants to see if you're worthy of the power that lies hidden here.
-
-"""
-    
-    # Discovery and challenge
-    discovery = f"""Suddenly, you hear a sound—the rustle of fabric, the snap of a twig. You spin around, wand raised, ready to defend yourself. But instead of an enemy, you see a figure emerging from the shadows.
-
-"Who's there?" you call out, your voice steady despite the adrenaline coursing through your veins.
-
-A voice responds, calm and measured: "A friend. Or at least, someone who shares your goal."
-
-The figure steps into the light, and you see another wizard—older, with a weathered face and eyes that have seen too much. They're wearing robes that mark them as a member of a different magical organization, but their wand is lowered, showing no hostile intent.
-
-"I've been tracking the same magical signatures," they explain. "The artifacts you seek are real, and they're more powerful than the Order of Phoenix may have told you. But there are others—dark wizards—who also want them."
-
-Your heart pounds. This is more dangerous than you anticipated. "What do you want?" you ask, keeping your wand ready.
-
-"To help you," they say. "But first, you must prove yourself. This location holds a test. Pass it, and you'll gain access to the next clue. Fail, and..." They don't finish the sentence, but the implication is clear.
-
-"""
-    
-    # The test/challenge (enhanced for Wiesn)
-    if historical_context:
-        challenge = f"""The mysterious wizard gestures, and the magical runes you saw earlier begin to glow brighter, forming a complex pattern on the ground. You recognize it as an ancient magical test—a trial that wizards of old used to determine worthiness.
-
-"You must solve this puzzle," the wizard explains. "The answer lies in understanding the history of this place, in seeing beyond what Muggles see, in recognizing the magic that binds everything together. The history you've learned about {poi_name} is not just Muggle history—it's intertwined with our magical world in ways you're about to discover."
-
-You study the pattern, your mind racing. The historical context you learned about this location suddenly becomes crucial. The runes aren't just random symbols—they're connected to the real history of {poi_name}, to the events that happened here, to the people who once walked these grounds. You think about {historical_context[:100]}... and how these events might have been influenced by or influenced the magical world.
-
-You think back to everything you know about this place, combining your magical knowledge with the historical facts. The solution begins to form in your mind, piece by piece, like a complex spell coming together. You realize that the answer requires understanding both the Muggle history and the hidden magical significance of this location.
-
-"""
-    else:
-        challenge = f"""The mysterious wizard gestures, and the magical runes you saw earlier begin to glow brighter, forming a complex pattern on the ground. You recognize it as an ancient magical test—a trial that wizards of old used to determine worthiness.
-
-"You must solve this puzzle," the wizard explains. "The answer lies in understanding the history of this place, in seeing beyond what Muggles see, in recognizing the magic that binds everything together."
-
-You study the pattern, your mind racing. The historical context you learned about this location suddenly becomes crucial. The runes aren't just random symbols—they're connected to the real history of {poi_name}, to the events that happened here, to the people who once walked these grounds.
-
-You think back to everything you know about this place, combining your magical knowledge with the historical facts. The solution begins to form in your mind, piece by piece, like a complex spell coming together.
-
-"""
-    
-    # Resolution and cliffhanger
-    resolution = f"""With a deep breath, you step forward and trace the correct pattern with your wand. The runes respond immediately, glowing brighter and brighter until they form a path of light leading away from this location.
-
-"You've passed the test," the mysterious wizard says, a hint of approval in their voice. "But this is only the beginning. The next location holds even greater challenges, and the dark wizards are closing in. You must move quickly."
-
-They hand you a small, enchanted object—a compass that points not to north, but to the next location on your quest. "Use this wisely," they warn. "And remember: not everything is as it seems. Trust your instincts, but verify everything."
-
-As they disappear into the shadows, you look at the compass. It's pointing toward {next_location_hint if next_location_hint else "your next destination"}. The magical path you've created glows invitingly, but you know that danger awaits.
-
-You've uncovered the first secret, passed the first test, but you're only at the beginning of your journey. The real challenges lie ahead, and you must be ready for whatever comes next.
-
-The adventure continues..."""
-    
-    # Combine all parts
-    full_chapter = chapter_intro + opening + middle + discovery + challenge + resolution
-    
-    # Ensure it's approximately 1000 words (rough estimate: ~150 words per section)
-    # The current structure should be close to 1000 words
-    return full_chapter
+        return chapter_intro + opening + "The magical trail leads you forward, toward new discoveries and challenges..."
 
 
 def _generate_simple_mock_chapter(

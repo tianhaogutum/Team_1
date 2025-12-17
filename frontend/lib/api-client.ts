@@ -328,6 +328,15 @@ class ApiClient {
   }
 
   /**
+   * Get profile details including user preferences
+   */
+  async getProfile(profileId: number): Promise<ApiProfile> {
+    return this.get<ApiProfile>(
+      `api/profiles/${profileId}`
+    );
+  }
+
+  /**
    * Get aggregated statistics for a profile
    */
   async getProfileStatistics(profileId: number): Promise<ApiProfileStatistics> {
@@ -388,4 +397,5 @@ import type {
   ApiAchievement,
   ApiProfileAchievement,
   ApiProfileStatistics,
+  ApiProfile,
 } from "./api-types";

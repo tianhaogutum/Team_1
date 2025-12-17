@@ -167,7 +167,7 @@ export function CompletionSummary({
               <div className="flex items-center justify-center gap-2">
                 <Sparkles className="w-5 h-5 text-secondary" />
                 <h3 className="font-semibold text-foreground">
-                  {isAiSummary ? 'AI Trip Summary (English)' : 'Trip Summary'}
+                  {isAiSummary ? 'AI Trip Summary' : 'Trip Summary'}
                 </h3>
               </div>
               
